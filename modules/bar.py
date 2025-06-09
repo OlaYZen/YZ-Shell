@@ -526,3 +526,10 @@ class Bar(Window):
             self.workspaces_num.add_style_class("chinese")
         else:
             self.workspaces_num.remove_style_class("chinese")
+
+    def set_notch(self, notch):
+        """Set the notch reference for widgets that need it"""
+        self.notch = notch
+        # Set notch reference for weather widget so it can open weather dashboard
+        if hasattr(self.weather, 'set_notch'):
+            self.weather.set_notch(notch)

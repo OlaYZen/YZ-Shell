@@ -47,6 +47,8 @@ if __name__ == "__main__":
     dock = Dock()
     bar.notch = notch
     notch.bar = bar
+    # Set notch reference for weather widget
+    bar.set_notch(notch)
     notification = NotificationPopup(widgets=notch.dashboard.widgets)
 
     # Set corners visibility based on config

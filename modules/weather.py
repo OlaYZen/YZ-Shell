@@ -2,82 +2,61 @@ import gi
 import requests
 import threading
 import urllib.parse
-from gi.repository import Gtk, GLib
+from gi.repository import Gtk, GLib, Gdk
 
 from fabric.widgets.label import Label
 from fabric.widgets.box import Box
+from fabric.widgets.button import Button
 
 gi.require_version("Gtk", "3.0")
 import config.data as data
 import modules.icons as icons
+from modules.weather_utils import WeatherUtils
 
 
 class Weather(Box):
     def __init__(self, **kwargs) -> None:
         super().__init__(name="weather", orientation="h", spacing=8, **kwargs)
         self.label = Label(name="weather-label", markup=icons.loader)
+        
+        # Wrap the label in a button to make it clickable
+        self.button = Button(
+            name="weather-button",
+            child=self.label,
+            on_clicked=self.on_weather_clicked,
+            tooltip_text="Click to open weather dashboard"
+        )
+        
+        # Add hover effects
+        self.button.connect("enter_notify_event", self.on_button_enter)
+        self.button.connect("leave_notify_event", self.on_button_leave)
+        
         self.lat = None
         self.lon = None
-        self.add(self.label)
+        self.add(self.button)
         self.show_all()
         self.enabled = True
         self.session = requests.Session()
+        self.notch = None  # Will be set by the bar
         GLib.timeout_add_seconds(600, self.fetch_weather)
         self.fetch_weather()
 
+    def on_weather_clicked(self, button):
+        """Handle weather widget click - open weather dashboard"""
+        if self.notch:
+            self.notch.open_notch("weather")
+
+    def set_notch(self, notch):
+        """Set the notch reference for opening the weather dashboard"""
+        self.notch = notch
+
     def get_coordinates(self):
         """Get coordinates using IP-based geolocation"""
-        try:
-            response = self.session.get("http://ip-api.com/json/", timeout=10)
-            if response.status_code == 200:
-                data = response.json()
-                if data['status'] == 'success':
-                    self.lat = data.get('lat')
-                    self.lon = data.get('lon')
-                    print(f"Auto-detected location: {data.get('city', 'Unknown')}, {data.get('country', 'Unknown')} ({self.lat}, {self.lon})")
-                    return True
-                else:
-                    print(f"Geolocation failed: {data.get('message', 'Unknown error')}")
-            else:
-                print(f"Geolocation service returned status code: {response.status_code}")
-        except Exception as e:
-            print(f"Error fetching coordinates: {e}")
-        
-        # Fallback coordinates (New York)
-        self.lat = 40.7128
-        self.lon = 74.0060
-        print(f"Using fallback coordinates: {self.lat}, {self.lon}")
-        return False
+        self.lat, self.lon, _ = WeatherUtils.get_coordinates(self.session)
+        return self.lat is not None and self.lon is not None
 
     def get_weather_emoji(self, weather_code):
-        # Map Met API weather codes to emojis
-        weather_emojis = {
-            "clearsky_day": "☀️",
-            "clearsky_night": "🌙",
-            "fair_day": "🌤️",
-            "fair_night": "🌤️",
-            "partlycloudy_day": "⛅",
-            "partlycloudy_night": "☁️",
-            "cloudy": "☁️",
-            "rainshowers_day": "🌦️",
-            "rainshowers_night": "🌧️",
-            "rain": "🌧️",
-            "thunder": "⛈️",
-            "sleet": "🌨️",
-            "snow": "❄️",
-            "fog": "🌫️",
-            "lightrain": "🌦️",
-            "heavyrain": "🌧️",
-            "lightsleet": "🌨️",
-            "heavysleet": "🌨️",
-            "lightsnow": "🌨️",
-            "heavysnow": "❄️",
-            "lightrainshowers_day": "🌦️",
-            "heavyrainshowers_day": "🌧️",
-            "lightrainshowers_night": "🌧️",
-            "heavyrainshowers_night": "🌧️"
-        }
-        return weather_emojis.get(weather_code.lower(), "🌡️")
+        return WeatherUtils.get_weather_emoji(weather_code)
 
     def set_visible(self, visible):
         """Override to track external visibility setting"""
@@ -112,9 +91,9 @@ class Weather(Box):
             GLib.idle_add(super().set_visible, False)
             return
         
-        url = f'https://api.met.no/weatherapi/locationforecast/2.0/compact?lat={self.lat}&lon={self.lon}&altitude=90'
+        url = WeatherUtils.get_met_api_url(self.lat, self.lon)
         try:
-            response = requests.get(url, headers={'User-Agent': 'weather-app/1.0'})
+            response = requests.get(url, headers={'User-Agent': WeatherUtils.get_user_agent('weather-app')})
             if response.status_code == 200:
                 data = response.json()["properties"]["timeseries"][0]["data"]
                 temp = data["instant"]["details"]["air_temperature"]
@@ -132,3 +111,15 @@ class Weather(Box):
             print(f"Error fetching weather: {e}")
             GLib.idle_add(self.label.set_markup, f"{icons.cloud_off} Error")
             GLib.idle_add(super().set_visible, False)
+
+    def on_button_enter(self, button, event):
+        # Implement hover effects when the button is entered
+        window = button.get_window()
+        if window:
+            window.set_cursor(Gdk.Cursor.new_from_name(button.get_display(), "hand2"))
+
+    def on_button_leave(self, button, event):
+        # Implement hover effects when the button is left
+        window = button.get_window()
+        if window:
+            window.set_cursor(None)

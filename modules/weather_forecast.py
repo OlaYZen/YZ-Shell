@@ -9,6 +9,7 @@ from fabric.widgets.box import Box
 
 gi.require_version("Gtk", "3.0")
 import modules.icons as icons
+from modules.weather_utils import WeatherUtils
 
 
 class WeatherForecast(Box):
@@ -23,10 +24,64 @@ class WeatherForecast(Box):
         # Title
         self.title = Label(
             name="weather-forecast-title",
-            markup=f"<span size='large' weight='bold'>{self.current_weather_emoji} {self.city_name}</span>",
+            markup=f"<span size='large' weight='bold'>{self.city_name}</span>",
             h_align="center"
         )
         self.add(self.title)
+        
+        # Current weather section
+        self.current_weather_container = Box(
+            name="current-weather-container",
+            orientation="v",
+            spacing=8,
+            h_align="center",
+            visible=False
+        )
+        
+        self.current_weather_main = Box(
+            name="current-weather-main",
+            orientation="h",
+            spacing=16,
+            h_align="center"
+        )
+        
+        self.current_temp_label = Label(
+            name="current-temperature",
+            markup="<span size='xx-large' weight='bold'>--°C</span>",
+            h_align="center"
+        )
+        
+        self.current_emoji_label = Label(
+            name="current-weather-emoji",
+            markup="<span size='xx-large'>🌡️</span>",
+            h_align="center"
+        )
+        
+        self.current_weather_main.add(self.current_emoji_label)
+        self.current_weather_main.add(self.current_temp_label)
+        
+        self.current_weather_details = Label(
+            name="current-weather-details",
+            markup="<span size='medium'>Current conditions</span>",
+            h_align="center"
+        )
+        
+        self.current_weather_container.add(self.current_weather_main)
+        self.current_weather_container.add(self.current_weather_details)
+        
+        # Add separator
+        self.current_separator = Label(
+            name="current-weather-separator", 
+            markup="<span size='small' color='gray'>━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━</span>",
+            h_align="center"
+        )
+        
+        self.add(self.current_weather_container)
+        self.add(self.current_separator)
+        
+        # Initially hide current weather section
+        self.current_weather_container.set_visible(False)
+        self.current_separator.set_visible(False)
         
         # Loading indicator
         self.loading_label = Label(
@@ -64,66 +119,37 @@ class WeatherForecast(Box):
 
     def get_coordinates(self):
         """Get coordinates using IP-based geolocation"""
-        try:
-            response = self.session.get("http://ip-api.com/json/", timeout=10)
-            if response.status_code == 200:
-                data = response.json()
-                if data['status'] == 'success':
-                    self.lat = data.get('lat')
-                    self.lon = data.get('lon')
-                    city = data.get('city', 'Unknown')
-                    country = data.get('country', 'Unknown')
-                    self.city_name = f"{city}, {country}"
-                    print(f"Auto-detected location: {self.city_name} ({self.lat}, {self.lon})")
-                    return True
-                else:
-                    print(f"Geolocation failed: {data.get('message', 'Unknown error')}")
-            else:
-                print(f"Geolocation service returned status code: {response.status_code}")
-        except Exception as e:
-            print(f"Error fetching coordinates: {e}")
-        
-        # Fallback coordinates (New York)
-        self.lat = 40.7128
-        self.lon = 74.0060
-        self.city_name = "Unknown Location"
-        print(f"Using fallback coordinates: {self.lat}, {self.lon}")
-        return False
+        self.lat, self.lon, self.city_name = WeatherUtils.get_coordinates(self.session)
+        return self.lat is not None and self.lon is not None
 
     def _update_title(self):
-        """Update the title with the city name and current weather emoji"""
-        self.title.set_markup(f"<span size='large' weight='bold'>{self.current_weather_emoji} {self.city_name}</span>")
+        """Update the title with the city name"""
+        self.title.set_markup(f"<span size='large' weight='bold'>{self.city_name}</span>")
+        return GLib.SOURCE_REMOVE
+
+    def _get_weather_description(self, weather_code):
+        """Get human-readable weather description from weather code"""
+        return WeatherUtils.get_weather_description(weather_code)
+    
+    def _update_current_weather(self, temperature, emoji, description):
+        """Update the current weather display"""
+        # Update temperature with decimal
+        self.current_temp_label.set_markup(f"<span size='xx-large' weight='bold'>{temperature:.1f}°C</span>")
+        
+        # Update emoji
+        self.current_emoji_label.set_markup(f"<span size='xx-large'>{emoji}</span>")
+        
+        # Update description
+        self.current_weather_details.set_markup(f"<span size='medium'>{description}</span>")
+        
+        # Show the current weather container
+        self.current_weather_container.set_visible(True)
+        self.current_separator.set_visible(True)
+        
         return GLib.SOURCE_REMOVE
 
     def get_weather_emoji(self, weather_code):
-        # Map Met.no API weather codes to emojis
-        weather_emojis = {
-            "clearsky_day": "☀️",
-            "clearsky_night": "🌙",
-            "fair_day": "🌤️",
-            "fair_night": "🌤️",
-            "partlycloudy_day": "⛅",
-            "partlycloudy_night": "☁️",
-            "cloudy": "☁️",
-            "rainshowers_day": "🌦️",
-            "rainshowers_night": "🌧️",
-            "rain": "🌧️",
-            "thunder": "⛈️",
-            "sleet": "🌨️",
-            "snow": "❄️",
-            "fog": "🌫️",
-            "lightrain": "🌦️",
-            "heavyrain": "🌧️",
-            "lightsleet": "🌨️",
-            "heavysleet": "🌨️",
-            "lightsnow": "🌨️",
-            "heavysnow": "❄️",
-            "lightrainshowers_day": "🌦️",
-            "heavyrainshowers_day": "🌧️",
-            "lightrainshowers_night": "🌧️",
-            "heavyrainshowers_night": "🌧️"
-        }
-        return weather_emojis.get(weather_code.lower(), "🌡️")
+        return WeatherUtils.get_weather_emoji(weather_code)
 
     def get_day_name(self, date):
         """Get day name for the date"""
@@ -136,15 +162,18 @@ class WeatherForecast(Box):
             return date.strftime("%A")
 
     def get_time_period_name(self, hour):
-        """Get time period name based on hour"""
-        if 22 <= hour or hour < 6:
-            return "Night"
-        elif 6 <= hour < 12:
-            return "Morning"
-        elif 12 <= hour < 18:
-            return "Afternoon"
-        else:  # 18 <= hour < 22
-            return "Evening"
+        """Get the closest time period based on hour"""
+        # Map to closest specific time period
+        if hour < 3:
+            return "00:00"
+        elif hour < 9:
+            return "06:00" 
+        elif hour < 15:
+            return "12:00"
+        elif hour < 21:
+            return "18:00"
+        else:
+            return "00:00"
 
     def create_time_period_widget(self, period_name, temp, emoji):
         """Create a widget for a specific time period"""
@@ -211,7 +240,7 @@ class WeatherForecast(Box):
         )
         
         # Add time period widgets
-        for period_name in ["Night", "Morning", "Afternoon", "Evening"]:
+        for period_name in ["00:00", "06:00", "12:00", "18:00"]:
             if period_name in periods_data:
                 period_data = periods_data[period_name]
                 period_widget = self.create_time_period_widget(
@@ -242,26 +271,42 @@ class WeatherForecast(Box):
             GLib.idle_add(self._show_error)
             return
         
-        url = f'https://api.met.no/weatherapi/locationforecast/2.0/compact?lat={self.lat}&lon={self.lon}&altitude=90'
+        url = WeatherUtils.get_met_api_url(self.lat, self.lon)
         
         try:
-            response = self.session.get(url, headers={'User-Agent': 'weather-forecast-app/1.0'})
+            response = self.session.get(url, headers={'User-Agent': WeatherUtils.get_user_agent('weather-forecast-app')})
             
             if response.status_code == 200:
                 data = response.json()
                 timeseries = data["properties"]["timeseries"]
                 
-                # Get current weather emoji for title
+                # Get current weather data
+                current_temp = None
+                current_weather_code = None
+                current_weather_description = ""
+                
                 if timeseries:
                     current_data = timeseries[0]["data"]
+                    
+                    # Get current temperature
+                    if "instant" in current_data and "details" in current_data["instant"]:
+                        current_temp = current_data["instant"]["details"].get("air_temperature")
+                    
+                    # Get current weather code and emoji
                     if "next_1_hours" in current_data and "summary" in current_data["next_1_hours"]:
                         current_weather_code = current_data["next_1_hours"]["summary"].get("symbol_code")
                         if current_weather_code:
-                            self.current_weather_emoji = self.get_weather_emoji(current_weather_code)
+                            self.current_weather_emoji = WeatherUtils.get_weather_emoji(current_weather_code)
+                            current_weather_description = WeatherUtils.get_weather_description(current_weather_code)
                     elif "next_6_hours" in current_data and "summary" in current_data["next_6_hours"]:
                         current_weather_code = current_data["next_6_hours"]["summary"].get("symbol_code")
                         if current_weather_code:
-                            self.current_weather_emoji = self.get_weather_emoji(current_weather_code)
+                            self.current_weather_emoji = WeatherUtils.get_weather_emoji(current_weather_code)
+                            current_weather_description = WeatherUtils.get_weather_description(current_weather_code)
+                
+                # Update current weather UI
+                if current_temp is not None and current_weather_code:
+                    GLib.idle_add(self._update_current_weather, current_temp, self.current_weather_emoji, current_weather_description)
                 
                 # Update title with current weather emoji
                 GLib.idle_add(self._update_title)
@@ -283,10 +328,10 @@ class WeatherForecast(Box):
                     
                     if date not in daily_data:
                         daily_data[date] = {
-                            'Night': {'temps': [], 'codes': []},
-                            'Morning': {'temps': [], 'codes': []},
-                            'Afternoon': {'temps': [], 'codes': []},
-                            'Evening': {'temps': [], 'codes': []}
+                            '00:00': {'temps': [], 'codes': []},
+                            '06:00': {'temps': [], 'codes': []},
+                            '12:00': {'temps': [], 'codes': []},
+                            '18:00': {'temps': [], 'codes': []}
                         }
                     
                     # Determine time period
@@ -314,7 +359,7 @@ class WeatherForecast(Box):
                     day_data = daily_data[date]
                     periods_data = {}
                     
-                    for period in ['Night', 'Morning', 'Afternoon', 'Evening']:
+                    for period in ['00:00', '06:00', '12:00', '18:00']:
                         period_info = day_data[period]
                         
                         if period_info['temps'] and period_info['codes']:
@@ -325,7 +370,7 @@ class WeatherForecast(Box):
                             most_common_code = max(set(period_info['codes']), 
                                                  key=period_info['codes'].count)
                             
-                            emoji = self.get_weather_emoji(most_common_code)
+                            emoji = WeatherUtils.get_weather_emoji(most_common_code)
                             
                             periods_data[period] = {
                                 'temp': avg_temp,
@@ -374,6 +419,8 @@ class WeatherForecast(Box):
     def _show_error(self):
         """Show error message"""
         self.loading_label.set_visible(False)
+        self.current_weather_container.set_visible(False)
+        self.current_separator.set_visible(False)
         self.forecast_container.set_visible(False)
         self.error_label.set_visible(True)
         
