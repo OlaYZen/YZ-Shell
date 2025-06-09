@@ -29,7 +29,7 @@ from .settings_utils import backup_and_replace, bind_vars, start_config
 class HyprConfGUI(Window):
     def __init__(self, show_lock_checkbox: bool, show_idle_checkbox: bool, **kwargs):
         super().__init__(
-            title="Ax-Shell Settings",
+            title="YZ-Shell Settings",
             name="axshell-settings-window",
             size=(640, 640),
             **kwargs,
@@ -488,7 +488,7 @@ class HyprConfGUI(Window):
             lock_label = Label(label="Replace Hyprlock config", h_align="start", v_align="center")
             system_grid.attach(lock_label, 2, row, 1, 1)
             lock_switch_container = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, halign=Gtk.Align.START, valign=Gtk.Align.CENTER)
-            self.lock_switch = Gtk.Switch(tooltip_text="Replace Hyprlock configuration with Ax-Shell's custom config")
+            self.lock_switch = Gtk.Switch(tooltip_text="Replace Hyprlock configuration with YZ-Shell's custom config")
             lock_switch_container.add(self.lock_switch)
             system_grid.attach(lock_switch_container, 3, row, 1, 1)
             row += 1
@@ -497,7 +497,7 @@ class HyprConfGUI(Window):
             idle_label = Label(label="Replace Hypridle config", h_align="start", v_align="center")
             system_grid.attach(idle_label, 2, row, 1, 1)
             idle_switch_container = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, halign=Gtk.Align.START, valign=Gtk.Align.CENTER)
-            self.idle_switch = Gtk.Switch(tooltip_text="Replace Hypridle configuration with Ax-Shell's custom config")
+            self.idle_switch = Gtk.Switch(tooltip_text="Replace Hypridle configuration with YZ-Shell's custom config")
             idle_switch_container.add(self.idle_switch)
             system_grid.attach(idle_switch_container, 3, row, 1, 1)
             row += 1
@@ -574,7 +574,7 @@ class HyprConfGUI(Window):
         vbox.add(Label(label="A hackable shell for Hyprland, powered by Fabric.", h_align="start", style="margin-bottom: 12px;"))
         repo_box = Box(orientation="h", spacing=6, h_align="start")
         repo_label = Label(label="GitHub:", h_align="start")
-        repo_link = Label(markup='<a href="https://github.com/OlaYZen/Ax-Shell">https://github.com/OlaYZen/Ax-Shell</a>')
+        repo_link = Label(markup='<a href="https://github.com/OlaYZen/YZ-Shell">https://github.com/OlaYZen/YZ-Shell</a>')
         repo_box.add(repo_label); repo_box.add(repo_link)
         vbox.add(repo_box)
         def on_kofi_clicked(_): import webbrowser; webbrowser.open("https://ko-fi.com/Axenide/")
@@ -737,7 +737,7 @@ class HyprConfGUI(Window):
             start_config() 
             print(f"{time.time():.4f}: Finished start_config().")
 
-            print(f"{time.time():.4f}: Initiating Ax-Shell restart using Popen...")
+            print(f"{time.time():.4f}: Initiating YZ-Shell restart using Popen...")
             main_py = os.path.expanduser(f"~/.config/{APP_NAME_CAP}/main.py")
             kill_cmd = f"killall {APP_NAME}"
             start_cmd = ["uwsm", "app", "--", "python", main_py]
@@ -754,7 +754,7 @@ class HyprConfGUI(Window):
             except FileNotFoundError as e: print(f"Error restarting {APP_NAME_CAP}: Command not found ({e})")
             except Exception as e: print(f"Error restarting {APP_NAME_CAP} via Popen: {e}")
             
-            print(f"{time.time():.4f}: Ax-Shell restart commands issued via Popen.")
+            print(f"{time.time():.4f}: YZ-Shell restart commands issued via Popen.")
             end_time = time.time()
             print(f"{end_time:.4f}: Background task finished (Total: {end_time - start_time:.4f}s).")
 

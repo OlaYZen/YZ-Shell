@@ -24,7 +24,7 @@ import config.data as data
 # File locations
 VERSION_FILE = get_relative_path("../version.json")
 REMOTE_VERSION_FILE = "/tmp/remote_version.json"
-REMOTE_URL = "https://raw.githubusercontent.com/OlaYZen/Ax-Shell/refs/heads/main/version.json"
+REMOTE_URL = "https://raw.githubusercontent.com/OlaYZen/YZ-Shell/refs/heads/main/version.json"
 REPO_DIR = get_relative_path("../")
 
 SNOOZE_FILE_NAME = "updater_snooze.txt"
@@ -259,7 +259,7 @@ class UpdateWindow(Gtk.Window):
         self.show_all()
 
         # Command to run in the terminal
-        curl_command = "curl -fsSL https://raw.githubusercontent.com/OlaYZen/Ax-Shell/main/install.sh | bash"
+        curl_command = "curl -fsSL https://raw.githubusercontent.com/OlaYZen/YZ-Shell/main/install.sh | bash"
 
         # Spawn the process asynchronously inside the terminal
         self.vte_terminal.spawn_async(

@@ -1,4 +1,4 @@
-# 🚀 Ax-Shell: Advanced Hyprland Desktop Shell
+# 🚀 YZ-Shell: Advanced Hyprland Desktop Shell
 
 <p align="center">
   <em>Documentation images and visual assets are currently being prepared and will be added in a future update.</em>
@@ -232,7 +232,7 @@ This fork includes several enhancements and improvements over the original Ax-Sh
 
 ### **Software Updates**
 - **Repository**: GitHub Releases
-  - **Endpoint**: `https://raw.githubusercontent.com/OlaYZen/Ax-Shell/main/version.json`
+  - **Endpoint**: `https://raw.githubusercontent.com/OlaYZen/YZ-Shell/main/version.json`
   - **Data**: Version numbers, changelogs, download URLs
   - **Frequency**: Hourly checks with user-controlled updates
 
@@ -247,12 +247,12 @@ This fork includes several enhancements and improvements over the original Ax-Sh
 
 ### **Local Data Storage**
 
-**Configuration Files** (Stored in `~/.config/Ax-Shell/`)
+**Configuration Files** (Stored in `~/.config/YZ-Shell/`)
 - `config/config.json` - Main configuration settings
 - `config/dock.json` - Dock application pins
 - `config/settings_*.py` - UI preferences and themes
 
-**Cache Files** (Stored in `~/.cache/ax-shell/`)
+**Cache Files** (Stored in `~/.cache/yz-shell/`)
 - `calc.json` - Calculator history (local only)
 - `conversion.json` - Unit conversion history (local only)
 - `fonts_updated` - Font installation tracking
@@ -305,7 +305,7 @@ This fork includes several enhancements and improvements over the original Ax-Sh
 
 ### **Automatic Installation (Arch Linux)**
 ```bash
-curl -fsSL https://raw.githubusercontent.com/OlaYZen/Ax-Shell/main/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/OlaYZen/YZ-Shell/main/install.sh | bash
 ```
 
 ### **Manual Installation**
@@ -335,8 +335,8 @@ noto-fonts-emoji ttf-zed-sans-mono-nerd
 
 **Installation:**
 ```bash
-git clone https://github.com/OlaYZen/Ax-Shell.git ~/.config/Ax-Shell
-uwsm -- app python ~/.config/Ax-Shell/main.py > /dev/null 2>&1 & disown
+git clone https://github.com/OlaYZen/YZ-Shell.git ~/.config/YZ-Shell
+uwsm -- app python ~/.config/YZ-Shell/main.py > /dev/null 2>&1 & disown
 ```
 
 ---
@@ -464,7 +464,7 @@ uwsm -- app python ~/.config/Ax-Shell/main.py > /dev/null 2>&1 & disown
 
 ## 🛠️ Configuration
 
-### **Main Configuration** (`~/.config/Ax-Shell/config/config.json`)
+### **Main Configuration** (`~/.config/YZ-Shell/config/config.json`)
 
 ```json
 {

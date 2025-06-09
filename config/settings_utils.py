@@ -234,7 +234,7 @@ bind = {bind_vars.get('prefix_caffeine', 'SUPER SHIFT')}, {bind_vars.get('suffix
 bind = {bind_vars.get('prefix_css', 'SUPER SHIFT')}, {bind_vars.get('suffix_css', 'B')}, exec, $fabricSend 'app.set_css()' # Reload CSS
 bind = {bind_vars.get('prefix_restart_inspector', 'SUPER CTRL ALT')}, {bind_vars.get('suffix_restart_inspector', 'B')}, exec, killall {APP_NAME}; uwsm-app $(GTK_DEBUG=interactive python {home}/.config/{APP_NAME_CAP}/main.py) # Restart with inspector
 
-# Wallpapers directory: {bind_vars.get('wallpapers_dir', '~/.config/Ax-Shell/assets/wallpapers_example')}
+# Wallpapers directory: {bind_vars.get('wallpapers_dir', '~/.config/YZ-Shell/assets/wallpapers_example')}
 
 source = {home}/.config/{APP_NAME_CAP}/config/hypr/colors.conf
 

@@ -4,8 +4,8 @@ set -e  # Exit immediately if a command fails
 set -u  # Treat unset variables as errors
 set -o pipefail  # Prevent errors in a pipeline from being masked
 
-REPO_URL="https://github.com/OlaYZen/Ax-Shell.git"
-INSTALL_DIR="$HOME/.config/Ax-Shell"
+REPO_URL="https://github.com/OlaYZen/YZ-Shell.git"
+INSTALL_DIR="$HOME/.config/YZ-Shell"
 PACKAGES=(
   brightnessctl
   cava
@@ -70,10 +70,10 @@ fi
 
 # Clone or update the repository
 if [ -d "$INSTALL_DIR" ]; then
-    echo "Updating Ax-Shell..."
+    echo "Updating YZ-Shell..."
     git -C "$INSTALL_DIR" pull
 else
-    echo "Cloning Ax-Shell..."
+    echo "Cloning YZ-Shell..."
     git clone --depth=1 "$REPO_URL" "$INSTALL_DIR"
 fi
 
@@ -115,8 +115,8 @@ else
 fi
 
 python "$INSTALL_DIR/config/config.py"
-echo "Starting Ax-Shell..."
-killall ax-shell 2>/dev/null || true
+echo "Starting YZ-Shell..."
+killall yz-shell 2>/dev/null || true
 uwsm app -- python "$INSTALL_DIR/main.py" > /dev/null 2>&1 & disown
 
 echo "Installation complete."
