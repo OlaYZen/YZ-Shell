@@ -15,7 +15,7 @@
 
 A feature-rich, modular desktop shell for Hyprland with comprehensive functionality including application management, system monitoring, productivity tools, and seamless desktop integration.
 
-> **Note**: This is a fork of the original [Ax-Shell](https://github.com/Axenide/Ax-Shell) with additional documentation and feature analysis.
+> **Note**: This is a fork of [Ax-Shell](https://github.com/Axenide/Ax-Shell) with additional features and enhancements.
 
 ## 🔄 Fork Enhancements
 
@@ -28,13 +28,18 @@ This fork includes several enhancements and improvements over the original Ax-Sh
 - **Dynamic Playback Indicators**: Media artwork now features a rotation animation during playback and stops when paused or idle, creating a vinyl record effect that provides visual feedback for media state
 
 ### **🌤️ Extended Weather Dashboard**
-- **3-Day Weather Forecast**: Dashboard now includes upcoming weather information displaying current day plus the next 2 days with temperature and condition previews
+- **3-Day Weather Forecast**: Dashboard now includes upcoming weather information displaying current day plus the next 2 days with temperature and condition previews, featuring current conditions and 4 daily time periods (midnight, morning, noon, evening)
+- **Interactive Weather Access**: Weather pill in the bar is now clickable for direct access
+- **Automatic Updates**: Weather information refreshes every 10 minutes to ensure current data
 
 ### **📊 Improved Network Metrics**
 - **Standardized Speed Units**: Network speeds now display in industry-standard units (Mbps, Kbps, bps) instead of MB/s, with consistent bit-per-second (bps) notation across all network measurements
 
 ### **🌐 Enhanced Weather Service**
-- **Professional Weather API**: Transitioned from wttr.in to the authoritative Met.no (Norwegian Meteorological Institute) API, delivering more reliable and accurate meteorological data with enhanced geographic coverage
+- **Better Weather API**: Switched from wttr.in to the Yr/Met.no weather API (run by the Norwegian Meteorological Institute) for more reliable and accurate weather data. **Fun Fact**: Jeremy Clarkson uses Yr for weather forecasts on his farm
+
+### **📅 Interactive Date Display**
+- **Multi-Format Date Switching**: Clock widget now supports instant switching between multiple formats via mouse clicks - left click toggles time/European date (DD/MM/YYYY), right click for American format (MM-DD-YYYY), and middle click for ISO format (YYYY.MM.DD), providing quick access to different date conventions
 
 ## 📊 Complete Feature List
 

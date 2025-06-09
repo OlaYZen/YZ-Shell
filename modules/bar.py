@@ -11,7 +11,7 @@ from fabric.widgets.centerbox import CenterBox
 from fabric.widgets.datetime import DateTime
 from fabric.widgets.label import Label
 from fabric.widgets.revealer import Revealer
-from gi.repository import Gdk, Gtk
+from gi.repository import Gdk, GLib, Gtk
 
 import config.data as data
 import modules.icons as icons
@@ -164,15 +164,35 @@ class Bar(Window):
         self.on_language_switch()
         self.connection.connect("event::activelayout", self.on_language_switch)
 
-        self.date_time = DateTime(
-            name="date-time",
-            formatters=["%H:%M:%S"] if not data.VERTICAL else ["%H\n%M"],
+        # Track display mode: 'time', 'date_eu', 'date_us', 'date_iso'
+        self.display_mode = 'time'
+        self.previous_mode = 'time'  # Track previous mode for middle/right click toggles
+        
+        # Create a custom clickable datetime widget using Label and Button
+        self.datetime_label = Label(
+            name="date-time-label",
             h_align="center" if not data.VERTICAL else "fill",
             v_align="center",
             h_expand=True,
             v_expand=True,
             style_classes=["vertical"] if data.VERTICAL else [],
         )
+        
+        self.date_time = Button(
+            name="date-time",
+            child=self.datetime_label,
+            h_align="center" if not data.VERTICAL else "fill",
+            v_align="center",
+            h_expand=True,
+            v_expand=True,
+        )
+        
+        # Connect button press event to handle different mouse buttons
+        self.date_time.connect("button-press-event", self.on_datetime_button_press)
+        
+        # Start the update timer
+        self.update_datetime_display()
+        GLib.timeout_add_seconds(1, self.update_datetime_display)
 
         self.button_apps = Button(
             name="button-bar",
@@ -513,6 +533,69 @@ class Bar(Window):
         else:
             self.lang_label.add_style_class("icon")
             self.lang_label.set_markup(icons.keyboard)
+    
+    def on_datetime_button_press(self, widget, event):
+        """Handle different mouse button clicks on datetime widget"""
+        if event.button == 1:  # Left click
+            # Cycle through: time -> EU date -> time
+            if self.display_mode == 'time':
+                self.previous_mode = 'time'
+                self.display_mode = 'date_eu'
+            else:
+                self.previous_mode = self.display_mode
+                self.display_mode = 'time'
+        elif event.button == 2:  # Middle click
+            # Toggle between current mode and ISO date format
+            if self.display_mode == 'date_iso':
+                self.display_mode = self.previous_mode
+            else:
+                self.previous_mode = self.display_mode
+                self.display_mode = 'date_iso'
+        elif event.button == 3:  # Right click
+            # Toggle between current mode and American date format
+            if self.display_mode == 'date_us':
+                self.display_mode = self.previous_mode
+            else:
+                self.previous_mode = self.display_mode
+                self.display_mode = 'date_us'
+        
+        # Update display immediately
+        self.update_datetime_display()
+        return True
+    
+    def update_datetime_display(self):
+        """Update the datetime display based on current mode"""
+        from datetime import datetime
+        
+        now = datetime.now()
+        
+        if self.display_mode == 'time':
+            # Show time
+            if not data.VERTICAL:
+                text = now.strftime("%H:%M:%S")
+            else:
+                text = now.strftime("%H\n%M")
+        elif self.display_mode == 'date_eu':
+            # European date format: DD/MM/YYYY
+            if not data.VERTICAL:
+                text = now.strftime("%d/%m/%Y")
+            else:
+                text = now.strftime("%d\n%m\n%Y")
+        elif self.display_mode == 'date_us':
+            # American date format: MM-DD-YYYY
+            if not data.VERTICAL:
+                text = now.strftime("%m-%d-%Y")
+            else:
+                text = now.strftime("%m\n%d\n%Y")
+        elif self.display_mode == 'date_iso':
+            # ISO date format: YYYY.MM.DD
+            if not data.VERTICAL:
+                text = now.strftime("%Y.%m.%d")
+            else:
+                text = now.strftime("%Y\n%m\n%d")
+        
+        self.datetime_label.set_text(text)
+        return True  # Return True to continue the timer
             
     def toggle_hidden(self):
         self.hidden = not self.hidden
