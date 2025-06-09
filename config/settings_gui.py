@@ -577,8 +577,8 @@ class HyprConfGUI(Window):
         repo_link = Label(markup='<a href="https://github.com/OlaYZen/Ax-Shell">https://github.com/OlaYZen/Ax-Shell</a>')
         repo_box.add(repo_label); repo_box.add(repo_link)
         vbox.add(repo_box)
-        def on_kofi_clicked(_): import webbrowser; webbrowser.open("https://ko-fi.com/OlaYZen")
-        kofi_btn = Button(label="Support on Ko-Fi ❤️", on_clicked=on_kofi_clicked, tooltip_text="Support Axenide on Ko-Fi", style="margin-top: 18px; min-width: 160px;")
+        def on_kofi_clicked(_): import webbrowser; webbrowser.open("https://ko-fi.com/Axenide/")
+        kofi_btn = Button(label="Support Axenide on Ko-Fi ❤️", on_clicked=on_kofi_clicked, tooltip_text="Support Axenide on Ko-Fi", style="margin-top: 18px; min-width: 160px;")
         vbox.add(kofi_btn)
         vbox.add(Box(v_expand=True))
         return vbox
