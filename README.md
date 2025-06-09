@@ -17,6 +17,25 @@ A feature-rich, modular desktop shell for Hyprland with comprehensive functional
 
 > **Note**: This is a fork of the original [Ax-Shell](https://github.com/Axenide/Ax-Shell) with additional documentation and feature analysis.
 
+## 🔄 Fork Enhancements
+
+This fork includes several enhancements and improvements over the original Ax-Shell:
+
+### **⏰ Enhanced Time Display**
+- **Seconds Precision**: Time display in the pill bar now shows seconds (HH:MM:SS) for improved time awareness, upgrading the original format
+
+### **🎵 Interactive Media Controls**
+- **Dynamic Playback Indicators**: Media artwork now features a rotation animation during playback and stops when paused or idle, creating a vinyl record effect that provides visual feedback for media state
+
+### **🌤️ Extended Weather Dashboard**
+- **3-Day Weather Forecast**: Dashboard now includes upcoming weather information displaying current day plus the next 2 days with temperature and condition previews
+
+### **📊 Improved Network Metrics**
+- **Standardized Speed Units**: Network speeds now display in industry-standard units (Mbps, Kbps, bps) instead of MB/s, with consistent bit-per-second (bps) notation across all network measurements
+
+### **🌐 Enhanced Weather Service**
+- **Professional Weather API**: Transitioned from wttr.in to the authoritative Met.no (Norwegian Meteorological Institute) API, delivering more reliable and accurate meteorological data with enhanced geographic coverage
+
 ## 📊 Complete Feature List
 
 ### **🚀 Application Management**
