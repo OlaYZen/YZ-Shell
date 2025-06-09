@@ -240,7 +240,6 @@ A feature-rich, modular desktop shell for Hyprland with comprehensive functional
 - `updater_snooze.txt` - Update notification preferences
 
 **Personal Data**
-- `personal_config.json` - Optional location override (user-created)
 - Clipboard history - Stored locally, never transmitted
 - Application usage patterns - Local only
 - Wallpaper preferences - Local file paths only
