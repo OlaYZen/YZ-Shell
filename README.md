@@ -1,21 +1,17 @@
 # 🚀 Ax-Shell: Advanced Hyprland Desktop Shell
 
 <p align="center">
-<a href="https://github.com/OlaYZen/Ax-Shell">
-  <img src="assets/cover.png">
-  </a>
+  <em>Documentation images and visual assets are currently being prepared and will be added in a future update.</em>
 </p>
 
 <p align="center">
-  <sub><sup><img src="https://raw.githubusercontent.com/Tarikul-Islam-Anik/Telegram-Animated-Emojis/main/Activity/Sparkles.webp" alt="Sparkles" width="25" height="25"/></sup></sub>
   <a href="https://github.com/hyprwm/Hyprland">
     <img src="https://img.shields.io/badge/A%20hackable%20shell%20for-Hyprland-0092CD?style=for-the-badge&logo=linux&color=0092CD&logoColor=D9E0EE&labelColor=000000" alt="A hackable shell for Hyprland">
   </a>
   <a href="https://github.com/Fabric-Development/fabric/">
     <img src="https://img.shields.io/badge/Powered%20by-Fabric-FAFAFA?style=for-the-badge&logo=python&color=FAFAFA&logoColor=D9E0EE&labelColor=000000" alt="Powered by Fabric">
-  <sub><sup><img src="https://raw.githubusercontent.com/Tarikul-Islam-Anik/Telegram-Animated-Emojis/main/Activity/Sparkles.webp" alt="Sparkles" width="25" height="25"/></sup></sub>
   </a>
-  </p>
+</p>
 
 A feature-rich, modular desktop shell for Hyprland with comprehensive functionality including application management, system monitoring, productivity tools, and seamless desktop integration.
 
@@ -526,17 +522,16 @@ All bar components can be individually toggled:
 
 ---
 
-<table align="center">
-  <tr>
-    <td align="center"><img src="https://raw.githubusercontent.com/Tarikul-Islam-Anik/Telegram-Animated-Emojis/main/Activity/Sparkles.webp" alt="Sparkles" width="16" height="16" /><sup> sᴜᴘᴘᴏʀᴛ ᴛʜᴇ ᴘʀᴏᴊᴇᴄᴛ </sup><img src="https://raw.githubusercontent.com/Tarikul-Islam-Anik/Telegram-Animated-Emojis/main/Activity/Sparkles.webp" alt="Sparkles" width="16" height="16" /></td>
-  </tr>
-  <tr>
-    <td align="center">
-      <a href='https://ko-fi.com/Axenide' target='_blank'>
-        <img style='border:0px;height:128px;'
-             src='https://media4.giphy.com/media/v1.Y2lkPTc5MGI3NjExc3N4NzlvZWs2Z2tsaGx4aHgwa3UzMWVpcmNwZTNraTM2NW84ZDlqbiZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9cw/PaF9a1MpqDzovyqVKj/giphy.gif'
-             border='0' alt='Support me on Ko-fi!' />
-      </a>
-    </td>
-  </tr>
-</table>
+---
+
+## Support
+
+If you find Ax-Shell useful, please consider supporting the **original project creator**:
+
+<p align="center">
+  <a href='https://ko-fi.com/Axenide' target='_blank'>
+    <img src='https://img.shields.io/badge/Support%20Original%20Author-Ko--fi-FF5E5B?style=for-the-badge&logo=ko-fi&logoColor=white' alt='Support Original Author on Ko-fi' />
+  </a>
+</p>
+
+> **Note**: This is a fork with additional features. Please support [Axenide](https://github.com/Axenide), the original creator of Ax-Shell.
