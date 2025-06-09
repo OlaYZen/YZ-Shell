@@ -114,8 +114,8 @@ class WeatherForecast(Box):
         self.show_all()
         self.fetch_weather_forecast()
         
-        # Update every 30 minutes
-        GLib.timeout_add_seconds(1800, self.fetch_weather_forecast)
+        # Update every 10 minutes
+        GLib.timeout_add_seconds(600, self.fetch_weather_forecast)
 
     def get_coordinates(self):
         """Get coordinates using IP-based geolocation"""
@@ -313,7 +313,9 @@ class WeatherForecast(Box):
                 
                 # Group data by date and time periods
                 daily_data = {}
-                today = datetime.now().date()
+                now = datetime.now()
+                today = now.date()
+                current_hour = now.hour
                 
                 for entry in timeseries:
                     time_str = entry["time"]
@@ -321,8 +323,11 @@ class WeatherForecast(Box):
                     date = time_obj.date()
                     hour = time_obj.hour
                     
-                    # Process next 5 days (including today)
+                    # Process next 3 days, but skip today if it's past midnight (00:00)
                     days_diff = (date - today).days
+                    if current_hour > 0 and days_diff == 0:
+                        # Skip today if we're past midnight
+                        continue
                     if days_diff < 0 or days_diff > 2:
                         continue
                     
