@@ -1,5 +1,6 @@
 import os
 import tempfile
+import time
 import urllib.parse
 import urllib.request
 
@@ -44,6 +45,14 @@ class PlayerBox(Box):
         super().__init__(orientation="v", h_align="fill", spacing=0, h_expand=False, v_expand=not vertical_mode)
         self.mpris_player = mpris_player
         self._progress_timer_id = None
+        self._spin_timer_id = None
+        self._rotation_angle = 0.0
+        self._spin_start_time = 0.0
+        self._stop_timer_id = None
+        self._stop_start_angle = 0.0
+        self._stop_start_time = 0.0
+        self._is_stopping = False
+        self._spin_direction = 1  # 1 for clockwise, -1 for counterclockwise
 
         self.cover = CircleImage(
             name="player-cover",
@@ -297,9 +306,156 @@ class PlayerBox(Box):
         if self.mpris_player.playback_status == "playing":
             self.play_pause.get_child().set_markup(icons.pause)
             self.play_pause.add_style_class("playing")
+            self.cover.add_style_class("spinning")
+            self._start_spinning()
         else:
             self.play_pause.get_child().set_markup(icons.play)
             self.play_pause.remove_style_class("playing")
+            self.cover.remove_style_class("spinning")
+            self._stop_spinning()
+
+    def _start_spinning(self):
+        """Start the spinning animation for the cover image"""
+        # Stop any ongoing stop animation
+        if self._stop_timer_id:
+            GLib.source_remove(self._stop_timer_id)
+            self._stop_timer_id = None
+            self._is_stopping = False
+            
+        # Remove any blur effect
+        self._apply_blur_effect(0)
+            
+        if not self._spin_timer_id:
+            self._rotation_angle = 0.0
+            self._spin_start_time = time.time()
+            # Use 240 FPS for ultra-smooth animation
+            self._spin_timer_id = GLib.timeout_add(4, self._update_rotation)
+    
+    def _stop_spinning(self):
+        """Stop the spinning animation for the cover image with smooth transition"""
+        if self._spin_timer_id:
+            GLib.source_remove(self._spin_timer_id)
+            self._spin_timer_id = None
+            
+            # Start smooth deceleration animation
+            self._is_stopping = True
+            self._stop_start_angle = self._rotation_angle
+            self._stop_start_time = time.time()
+            
+            # Determine spin direction based on current position
+            if self._stop_start_angle > 180:
+                # Spin counterclockwise (negative direction) if over halfway
+                self._spin_direction = -1
+            else:
+                # Spin clockwise (positive direction) if under halfway
+                self._spin_direction = 1
+            
+            # Start deceleration timer
+            self._stop_timer_id = GLib.timeout_add(4, self._update_stop_animation)
+    
+    def _update_rotation(self):
+        """Update the rotation angle and apply it to the cover image"""
+        # Skip if we're in stopping animation
+        if self._is_stopping:
+            return False
+            
+        # Time-based animation for smooth rotation
+        current_time = time.time()
+        elapsed_time = current_time - self._spin_start_time
+        
+        # Complete rotation every 3 seconds (120 degrees per second)
+        degrees_per_second = 120.0
+        self._rotation_angle = (elapsed_time * degrees_per_second) % 360.0
+        
+        # Use integer conversion for cleaner rotation
+        self.cover.angle = int(self._rotation_angle)
+        return True  # Continue the timer
+    
+
+    def _apply_blur_effect(self, blur_amount):
+        """Apply blur effect to the cover image using CSS"""
+        try:
+            css_provider = Gtk.CssProvider()
+            css_data = f"""
+            #player-cover.spinning {{
+                filter: blur({blur_amount}px);
+                transition: filter 0.1s ease-out;
+            }}
+            """
+            css_provider.load_from_data(css_data.encode())
+            
+            # Apply the CSS to the cover widget
+            style_context = self.cover.get_style_context()
+            style_context.add_provider(css_provider, Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION + 1)
+        except Exception:
+            # Fallback: skip blur if CSS doesn't support it
+            pass
+    
+    def _update_stop_animation(self):
+        """Update the stopping animation with 2 fast rotations then ease-out-back to center"""
+        current_time = time.time()
+        elapsed_time = current_time - self._stop_start_time
+        stop_duration = 1.2  # 1200ms total (300ms fast spins + 900ms ease-out-back)
+        
+        if elapsed_time >= stop_duration:
+            # Animation complete
+            self._is_stopping = False
+            self._rotation_angle = 0.0
+            self._spin_start_time = 0.0
+            self._stop_timer_id = None
+            self.cover.angle = 0
+            # Remove blur effect
+            self._apply_blur_effect(0)
+            return False  # Stop the timer
+        
+        # Phase 1: Fast 2 rotations (first 300ms)
+        fast_spin_duration = 0.3  # 300ms
+        # Phase 2: Ease-out-back to center (remaining 900ms)
+        ease_back_duration = 0.9  # 900ms
+        
+        if elapsed_time <= fast_spin_duration:
+            # Fast spinning phase with blur
+            spin_progress = elapsed_time / fast_spin_duration
+            
+            # Apply heavy blur during fast spinning
+            blur_amount = 15.0 * (1 - spin_progress * 0.5)  # Reduce blur gradually but keep some
+            self._apply_blur_effect(blur_amount)
+            
+            # 1.5 full rotations (540 degrees) in 300ms, direction based on position
+            extra_rotations = self._spin_direction * 540.0 * spin_progress
+            current_angle = (self._stop_start_angle + extra_rotations) % 360
+            
+            self.cover.angle = int(current_angle)
+            
+        else:
+            # Ease-out-back phase
+            ease_elapsed = elapsed_time - fast_spin_duration
+            ease_progress = ease_elapsed / ease_back_duration
+            
+            # Remove blur during ease-back phase
+            if ease_elapsed <= 0.1:  # First 100ms of ease-back
+                blur_fade_progress = ease_elapsed / 0.1
+                blur_amount = 7.5 * (1 - blur_fade_progress)  # Fade remaining blur
+                self._apply_blur_effect(blur_amount)
+            else:
+                self._apply_blur_effect(0)
+            
+            # Calculate starting position for ease-back (current position after 1.5 rotations)
+            start_angle_for_ease = (self._stop_start_angle + 540.0) % 360
+            
+            # Choose shortest path to 0 from the new starting position
+            if start_angle_for_ease > 180:
+                start_angle_for_ease = start_angle_for_ease - 360
+            
+            # Regular ease-out animation from current position to 0
+            ease_out_progress = 1 - (1 - ease_progress) ** 3  # Cubic ease-out
+            current_angle = start_angle_for_ease * (1 - ease_out_progress)
+            
+            # Handle negative angles properly
+            display_angle = current_angle % 360
+            self.cover.angle = int(display_angle)
+        
+        return True  # Continue the timer
 
     def on_wallpaper_changed(self, monitor, file, other_file, event):
         self.cover.set_image_from_file(os.path.expanduser("~/.current.wall"))

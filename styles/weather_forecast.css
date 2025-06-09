@@ -1,0 +1,61 @@
+#weather-forecast {
+  padding: 24px;
+  background-color: var(--shadow);
+  border-radius: 20px;
+  margin: 8px;
+}
+
+#weather-forecast-title {
+  color: var(--primary);
+  margin-bottom: 16px;
+  font-size: 24px;
+}
+
+#weather-loading {
+  color: var(--foreground);
+  font-size: 20px;
+  margin: 24px 0;
+}
+
+#weather-error {
+  color: var(--surface-bright);
+  font-size: 20px;
+  margin: 24px 0;
+}
+
+#forecast-day {
+  background-color: var(--shadow);
+  border-radius: 12px;
+  padding: 12px 16px;
+  margin: 6px 0;
+  transition: background-color 0.2s ease;
+}
+
+#forecast-day:hover {
+  background-color: var(--surface-bright);
+}
+
+#forecast-day-name {
+  color: var(--primary);
+  font-weight: bold;
+  font-size: 20px;
+  min-width: 80px;
+  margin-bottom: 8px;
+}
+
+#forecast-weather-icon {
+  color: var(--foreground);
+  margin-right: 12px;
+}
+
+#forecast-weather-desc {
+  color: var(--foreground);
+  font-size: 18px;
+  min-width: 120px;
+}
+
+#forecast-temp {
+  color: var(--primary);
+  font-weight: bold;
+  font-size: 20px;
+} 

@@ -643,12 +643,14 @@ class NetworkApplet(Button):
         return True
 
     def format_speed(self, speed):
-        if speed < 1024:
-            return f"{speed:.0f} B/s"
-        elif speed < 1024 * 1024:
-            return f"{speed / 1024:.1f} KB/s"
+        # Convert bytes to bits and then to megabits
+        speed_bits = speed * 8  # Convert bytes to bits
+        if speed_bits < 1000:
+            return f"{speed_bits:.0f} bps"
+        elif speed_bits < 1000000:
+            return f"{speed_bits / 1000:.1f} Kbps"
         else:
-            return f"{speed / (1024 * 1024):.1f} MB/s"
+            return f"{speed_bits / 1000000:.1f} Mbps"
 
     def on_mouse_enter(self, *_):
         self.is_mouse_over = True
