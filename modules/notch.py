@@ -514,6 +514,7 @@ class Notch(Window):
             "pins": self.dashboard.pins,
             "kanban": self.dashboard.kanban,
             "wallpapers": self.dashboard.wallpapers,
+            "weather": self.dashboard.weather_forecast,
         }
         if widget_name in dashboard_sections_map:
             section_widget_instance = dashboard_sections_map[widget_name]

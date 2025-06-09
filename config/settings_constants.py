@@ -38,6 +38,8 @@ DEFAULTS = {
     'suffix_emoji': "PERIOD",
     'prefix_power': "SUPER",
     'suffix_power': "ESCAPE",
+    'prefix_weather': "SUPER",
+    'suffix_weather': "W",
     'prefix_caffeine': "SUPER SHIFT",
     'suffix_caffeine': "M",
     'prefix_toggle': "SUPER CTRL",

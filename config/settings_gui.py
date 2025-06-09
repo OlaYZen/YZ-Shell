@@ -126,6 +126,7 @@ class HyprConfGUI(Window):
             ("Random Wallpaper", 'prefix_randwall', 'suffix_randwall'),
             ("Emoji Picker", 'prefix_emoji', 'suffix_emoji'),
             ("Power Menu", 'prefix_power', 'suffix_power'),
+            ("Weather", 'prefix_weather', 'suffix_weather'),
             ("Toggle Caffeine", 'prefix_caffeine', 'suffix_caffeine'),
             ("Reload CSS", 'prefix_css', 'suffix_css'),
             ("Restart with inspector", 'prefix_restart_inspector', 'suffix_restart_inspector'),
