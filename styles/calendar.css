@@ -1,7 +1,5 @@
 #calendar {
-  /* background-color: var(--shadow); */
-  border-radius: 20px;
-  border: 4px solid var(--surface);
+  /* Remove border - will be on wrapper */
   padding: 4px;
 }
 

@@ -151,9 +151,13 @@ class WeatherForecast(Box):
         else:
             return date.strftime("%A")
 
-    def get_time_period_name(self, hour):
+    def get_time_period_name(self, hour, is_today=False, current_hour=0):
         """Get the closest time period based on hour"""
-        # Map to closest specific time period
+        # If it's today and after 18:00, use hourly periods
+        if is_today and current_hour >= 18:
+            return f"{hour:02d}:00"
+        
+        # Map to closest specific time period for regular periods
         if hour < 3:
             return "00:00"
         elif hour < 9:
@@ -229,16 +233,15 @@ class WeatherForecast(Box):
             h_expand=True
         )
         
-        # Add time period widgets
-        for period_name in ["00:00", "06:00", "12:00", "18:00"]:
-            if period_name in periods_data:
-                period_data = periods_data[period_name]
-                period_widget = self.create_time_period_widget(
-                    period_name,
-                    period_data['temp'],
-                    period_data['emoji']
-                )
-                periods_box.add(period_widget)
+        # Add time period widgets based on available data
+        for period_name in sorted(periods_data.keys()):
+            period_data = periods_data[period_name]
+            period_widget = self.create_time_period_widget(
+                period_name,
+                period_data['temp'],
+                period_data['emoji']
+            )
+            periods_box.add(period_widget)
         
         day_box.add(day_header)
         day_box.add(periods_box)
@@ -303,6 +306,18 @@ class WeatherForecast(Box):
                 today = now.date()
                 current_hour = now.hour
                 
+                # Determine periods for today based on current time
+                if current_hour >= 18:
+                    # After 18:00, show next 4 hours (excluding 00:00)
+                    today_periods = []
+                    for i in range(4):
+                        next_hour = current_hour + 1 + i
+                        if next_hour <= 23:  # Don't show 00:00 (24:00)
+                            today_periods.append(f"{next_hour:02d}:00")
+                else:
+                    # Before 18:00, use regular periods
+                    today_periods = ['00:00', '06:00', '12:00', '18:00']
+                
                 for entry in timeseries:
                     time_str = entry["time"]
                     time_obj = datetime.fromisoformat(time_str.replace('Z', '+00:00'))
@@ -314,23 +329,38 @@ class WeatherForecast(Box):
                     if days_diff < 0 or days_diff > 2:
                         continue
                     
-                    # For today, only show future time periods
-                    if days_diff == 0:
+                    is_today = (days_diff == 0)
+                    
+                    # Initialize daily data structure
+                    if date not in daily_data:
+                        if is_today:
+                            # Use dynamic periods for today
+                            daily_data[date] = {period: {'temps': [], 'codes': []} for period in today_periods}
+                        else:
+                            # Use regular periods for future days
+                            daily_data[date] = {
+                                '00:00': {'temps': [], 'codes': []},
+                                '06:00': {'temps': [], 'codes': []},
+                                '12:00': {'temps': [], 'codes': []},
+                                '18:00': {'temps': [], 'codes': []}
+                            }
+                    
+                    # Determine time period
+                    period = self.get_time_period_name(hour, is_today, current_hour)
+                    
+                    # For today, only process periods we're interested in
+                    if is_today and period not in today_periods:
+                        continue
+                    
+                    # For today with regular periods, only show future time periods
+                    if is_today and current_hour < 18:
                         period_hour_map = {'00:00': 0, '06:00': 6, '12:00': 12, '18:00': 18}
-                        period = self.get_time_period_name(hour)
                         if period in period_hour_map and period_hour_map[period] < current_hour:
                             continue
                     
-                    if date not in daily_data:
-                        daily_data[date] = {
-                            '00:00': {'temps': [], 'codes': []},
-                            '06:00': {'temps': [], 'codes': []},
-                            '12:00': {'temps': [], 'codes': []},
-                            '18:00': {'temps': [], 'codes': []}
-                        }
-                    
-                    # Determine time period
-                    period = self.get_time_period_name(hour)
+                    # Skip if this period doesn't exist in our data structure
+                    if period not in daily_data[date]:
+                        continue
                     
                     # Extract temperature
                     if "instant" in entry["data"] and "details" in entry["data"]["instant"]:
@@ -354,30 +384,35 @@ class WeatherForecast(Box):
                     day_data = daily_data[date]
                     periods_data = {}
                     
-                    for period in ['00:00', '06:00', '12:00', '18:00']:
-                        period_info = day_data[period]
-                        
-                        if period_info['temps'] and period_info['codes']:
-                            # Use average temperature for the period
-                            avg_temp = int(sum(period_info['temps']) / len(period_info['temps']))
+                    # Determine which periods to process for this date
+                    is_today_date = (date == today)
+                    periods_to_process = today_periods if is_today_date else ['00:00', '06:00', '12:00', '18:00']
+                    
+                    for period in periods_to_process:
+                        if period in day_data:
+                            period_info = day_data[period]
                             
-                            # Use most common weather code for the period
-                            most_common_code = max(set(period_info['codes']), 
-                                                 key=period_info['codes'].count)
-                            
-                            emoji = WeatherUtils.get_weather_emoji(most_common_code)
-                            
-                            periods_data[period] = {
-                                'temp': avg_temp,
-                                'emoji': emoji
-                            }
-                        elif period_info['temps']:
-                            # Have temperature but no weather code
-                            avg_temp = int(sum(period_info['temps']) / len(period_info['temps']))
-                            periods_data[period] = {
-                                'temp': avg_temp,
-                                'emoji': "🌡️"
-                            }
+                            if period_info['temps'] and period_info['codes']:
+                                # Use average temperature for the period
+                                avg_temp = int(sum(period_info['temps']) / len(period_info['temps']))
+                                
+                                # Use most common weather code for the period
+                                most_common_code = max(set(period_info['codes']), 
+                                                     key=period_info['codes'].count)
+                                
+                                emoji = WeatherUtils.get_weather_emoji(most_common_code)
+                                
+                                periods_data[period] = {
+                                    'temp': avg_temp,
+                                    'emoji': emoji
+                                }
+                            elif period_info['temps']:
+                                # Have temperature but no weather code
+                                avg_temp = int(sum(period_info['temps']) / len(period_info['temps']))
+                                periods_data[period] = {
+                                    'temp': avg_temp,
+                                    'emoji': "🌡️"
+                                }
                     
                     if periods_data:  # Only create widget if we have data
                         day_widget = self.create_day_forecast(date, periods_data)

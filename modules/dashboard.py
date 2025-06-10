@@ -15,6 +15,7 @@ from gi.repository import Gdk, GdkPixbuf, GLib, Gtk
 
 import modules.icons as icons
 from modules.kanban import Kanban
+
 from modules.pins import Pins
 from modules.wallpapers import WallpaperSelector
 from modules.weather_forecast import WeatherForecast

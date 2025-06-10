@@ -15,7 +15,8 @@
 #bluetooth-scan,
 #bluetooth-back,
 #network-refresh,
-#network-back {
+#network-back,
+#wifi-toggle-button {
   background-color: var(--surface);
   border-radius: 8px;
   padding: 4px;
@@ -29,7 +30,8 @@
 #bluetooth-scan:hover,
 #bluetooth-back:hover,
 #network-refresh:hover,
-#network-back:hover {
+#network-back:hover,
+#wifi-toggle-button:hover {
   background-color: var(--surface-bright);
 }
 
@@ -100,6 +102,134 @@
 #network-refresh-label {
   font-size: 20px;
   color: var(--primary);
+}
+
+#wifi-lock-icon {
+  font-size: 12px;
+  color: var(--yellow);
+  margin-left: 4px;
+}
+
+#wifi-saved-icon {
+  font-size: 12px;
+  color: var(--green);
+  margin-left: 4px;
+}
+
+#wifi-connect-button.saved {
+  background-color: rgba(34, 197, 94, 0.1);
+  color: var(--green);
+  border: 1px solid rgba(34, 197, 94, 0.3);
+}
+
+#wifi-connect-button.saved:hover {
+  background-color: rgba(34, 197, 94, 0.2);
+}
+
+#wifi-password-prompt {
+  /* Remove border - will be on wrapper */
+  padding: 4px;
+  min-width: 240px;
+}
+
+#password-header {
+  border-radius: 12px;
+  border: 2px solid var(--surface);
+  padding: 4px;
+}
+
+#password-title {
+  font-weight: bold;
+}
+
+#password-back-button {
+  background-color: var(--surface);
+  border-radius: 8px;
+  padding: 4px;
+}
+
+#password-back-button:hover {
+  background-color: var(--surface-bright);
+}
+
+#password-back-button:active {
+  background-color: var(--primary);
+}
+
+#password-back-label {
+  color: var(--primary);
+  font-size: 20px;
+}
+
+#password-back-button:active #password-back-label {
+  color: var(--shadow);
+}
+
+#password-content {
+  border-radius: 16px;
+  padding: 4px;
+}
+
+#password-network-text {
+  font-size: 16px;
+  font-weight: bold;
+  margin-bottom: 4px;
+}
+
+#password-network-ssid {
+  font-size: 18px;
+  font-weight: bold;
+  color: var(--primary);
+  margin-bottom: 8px;
+}
+
+#password-network-info {
+  font-size: 16px;
+  margin-bottom: 8px;
+  font-weight: bold;
+}
+
+#password-entry {
+  background-color: var(--surface);
+  border: 2px solid var(--outline);
+  border-radius: 8px;
+  font-size: 14px;
+  padding: 8px;
+}
+
+#password-entry:focus {
+  border-color: var(--primary);
+}
+
+#show-password-button {
+  background-color: var(--surface);
+  border-radius: 8px;
+  padding: 8px;
+}
+
+#show-password-button:hover {
+  background-color: var(--surface-bright);
+}
+
+#password-cancel-button,
+#password-connect-button {
+  background-color: var(--surface);
+  border-radius: 8px;
+  padding: 8px 16px;
+}
+
+#password-cancel-button:hover,
+#password-connect-button:hover {
+  background-color: var(--surface-bright);
+}
+
+#password-connect-button {
+  background-color: var(--blue);
+  color: var(--shadow);
+}
+
+#password-connect-button:hover {
+  background-color: var(--blue-bright);
 }
 
 #bluetooth-scan.scanning {

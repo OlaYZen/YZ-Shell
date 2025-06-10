@@ -95,14 +95,44 @@ class NetworkButton(Box):
         GLib.idle_add(self._initial_update)
 
     def _initial_update(self):
-        self.update_state()
+        # Check if Wi-Fi device is available, if not schedule another check
+        if not self.network_client.wifi_device:
+            # Schedule another check in case the device isn't ready yet
+            GLib.timeout_add_seconds(2, self._check_wifi_hardware_delayed)
+        else:
+            self.update_state()
         return False
+
+    def _check_wifi_hardware_delayed(self):
+        """Delayed check for Wi-Fi hardware availability"""
+        if not self.network_client.wifi_device:
+            # No Wi-Fi hardware found after delay - handle as no hardware
+            self._handle_no_wifi_hardware()
+        else:
+            self.update_state()
+        return False  # Don't repeat this timeout
 
     def _on_wifi_ready(self, *args):
         if self.network_client.wifi_device:
             self.network_client.wifi_device.connect('notify::enabled', self.update_state)
             self.network_client.wifi_device.connect('notify::ssid', self.update_state)
             self.update_state()
+        else:
+            # No Wi-Fi hardware available - gray out the button
+            self._handle_no_wifi_hardware()
+
+    def _handle_no_wifi_hardware(self):
+        """Handle the case when no Wi-Fi hardware is available"""
+        self.network_icon.set_markup(icons.wifi_off)
+        self.network_ssid.set_label("No Wi-Fi Hardware")
+        
+        # Gray out the entire button
+        for widget in self.widgets_list_internal:
+            widget.add_style_class("disabled")
+        
+        # Disable the button functionality
+        self.network_status_button.set_sensitive(False)
+        self.network_menu_button.set_sensitive(False)
 
     def _animate_searching(self):
         """Animate wifi icon when searching for networks"""
@@ -139,6 +169,10 @@ class NetworkButton(Box):
         """Update the button state based on network status"""
         wifi = self.network_client.wifi_device
         ethernet = self.network_client.ethernet_device
+
+        # If no Wi-Fi hardware is available, don't update the state
+        if not wifi:
+            return
 
         if wifi and not wifi.enabled:
             self._stop_animation()
@@ -243,7 +277,7 @@ class BluetoothButton(Box):
             name="bluetooth-status-button",
             h_expand=True,
             child=self.bluetooth_status_container,
-            on_clicked=lambda *_: self.widgets.bluetooth.client.toggle_power(),
+            on_clicked=lambda *_: self._toggle_bluetooth(),
         )
         add_hover_cursor(self.bluetooth_status_button)
         self.bluetooth_menu_label = Label(
@@ -259,6 +293,200 @@ class BluetoothButton(Box):
 
         self.add(self.bluetooth_status_button)
         self.add(self.bluetooth_menu_button)
+
+        self.widgets_list_internal = [self, self.bluetooth_icon, self.bluetooth_label,
+                       self.bluetooth_status_text, self.bluetooth_status_button,
+                       self.bluetooth_menu_button, self.bluetooth_menu_label]
+
+        # Check for Bluetooth hardware availability after widgets are initialized
+        GLib.idle_add(self._check_bluetooth_hardware)
+        
+        # Set up periodic hardware check to detect dynamic changes (every 60 seconds)
+        GLib.timeout_add_seconds(60, self._periodic_hardware_check)
+
+    def _toggle_bluetooth(self):
+        """Toggle Bluetooth power, but only if hardware is available"""
+        # First check if hardware is still available
+        if not self._check_system_bluetooth_hardware():
+            if not hasattr(self, '_hardware_unavailable_notified'):
+                self._handle_no_bluetooth_hardware()
+                self._hardware_unavailable_notified = True
+            return
+            
+        try:
+            if hasattr(self.widgets, 'bluetooth'):
+                self.widgets.bluetooth.toggle_power()
+        except Exception:
+            # Hardware not available or error occurred
+            self._handle_no_bluetooth_hardware()
+
+    def refresh_hardware_status(self):
+        """Refresh the Bluetooth hardware status"""
+        if self._check_system_bluetooth_hardware():
+            # Hardware is available, remove disabled styling if it was applied
+            for widget in self.widgets_list_internal:
+                widget.remove_style_class("disabled")
+            self.bluetooth_status_button.set_sensitive(True)
+            self.bluetooth_menu_button.set_sensitive(True)
+            self.bluetooth_icon.set_markup(icons.bluetooth)
+            self.bluetooth_status_text.set_label("Disabled")  # Will be updated by status_label()
+            self._hardware_unavailable_notified = False
+        else:
+            # No hardware available
+            self._handle_no_bluetooth_hardware()
+
+    def _check_bluetooth_hardware(self):
+        """Check if Bluetooth hardware is available"""
+        try:
+            # Try to access the bluetooth client through the widgets hierarchy
+            if (hasattr(self.widgets, 'bluetooth') and 
+                hasattr(self.widgets.bluetooth, 'client')):
+                
+                # Check if the client has the expected properties/methods
+                client = self.widgets.bluetooth.client
+                if hasattr(client, 'enabled') and hasattr(client, 'toggle_power'):
+                    # Hardware seems to be available
+                    return False
+                else:
+                    # Client exists but doesn't have expected properties
+                    self._handle_no_bluetooth_hardware()
+                    return False
+            else:
+                # Schedule another check in case bluetooth module isn't ready yet  
+                GLib.timeout_add_seconds(3, self._check_bluetooth_hardware_delayed)
+                return False
+        except Exception as e:
+            # Exception occurred - likely no hardware
+            self._handle_no_bluetooth_hardware()
+            return False
+
+    def _check_bluetooth_hardware_delayed(self):
+        """Delayed check for Bluetooth hardware availability"""
+        try:
+            if (hasattr(self.widgets, 'bluetooth') and 
+                hasattr(self.widgets.bluetooth, 'client')):
+                
+                client = self.widgets.bluetooth.client
+                
+                # Try to access the enabled property - this will fail if no hardware
+                try:
+                    _ = client.enabled
+                    # If we get here, hardware is available
+                    return False
+                except Exception:
+                    # Failed to access enabled property - no hardware
+                    self._handle_no_bluetooth_hardware()
+                    return False
+            else:
+                # Still no bluetooth client found after delay - try system check
+                if not self._check_system_bluetooth_hardware():
+                    self._handle_no_bluetooth_hardware()
+                return False
+        except Exception:
+            # Exception occurred - try system check as fallback
+            if not self._check_system_bluetooth_hardware():
+                self._handle_no_bluetooth_hardware()
+            return False
+
+    def _check_system_bluetooth_hardware(self):
+        """Check for Bluetooth hardware at system level"""
+        try:
+            import subprocess
+            import os
+            
+            # Method 1: Check bluetoothctl list (most reliable)
+            try:
+                result = subprocess.run(['bluetoothctl', 'list'], 
+                                      capture_output=True, text=True, timeout=3)
+                if result.returncode == 0:
+                    # Check if any controllers are listed
+                    output = result.stdout.strip()
+                    if output and 'Controller' in output:
+                        return True
+            except (subprocess.TimeoutExpired, FileNotFoundError):
+                pass
+            
+            # Method 2: Check rfkill list bluetooth
+            try:
+                result = subprocess.run(['rfkill', 'list', 'bluetooth'], 
+                                      capture_output=True, text=True, timeout=3)
+                if result.returncode == 0:
+                    output = result.stdout.strip()
+                    # Check if any bluetooth devices are listed
+                    if output and ': Bluetooth' in output:
+                        return True
+            except (subprocess.TimeoutExpired, FileNotFoundError):
+                pass
+            
+            # Method 3: Check hciconfig for active controllers
+            try:
+                result = subprocess.run(['hciconfig'], 
+                                      capture_output=True, text=True, timeout=3)
+                if result.returncode == 0:
+                    output = result.stdout.strip()
+                    # Only return True if we see actual controller info, not just "hci"
+                    if output and 'BD Address' in output:
+                        return True
+            except (subprocess.TimeoutExpired, FileNotFoundError):
+                pass
+            
+            # Method 4: Check /sys/class/bluetooth for actual devices
+            try:
+                bt_path = '/sys/class/bluetooth'
+                if os.path.exists(bt_path):
+                    devices = os.listdir(bt_path)
+                    # Filter out just directories that look like bluetooth controllers
+                    bt_controllers = [d for d in devices if d.startswith('hci')]
+                    if bt_controllers:
+                        # Check if any controller is actually functional
+                        for controller in bt_controllers:
+                            ctrl_path = os.path.join(bt_path, controller)
+                            if os.path.exists(os.path.join(ctrl_path, 'address')):
+                                return True
+            except Exception:
+                pass
+            
+            # Method 5: Check systemctl status bluetooth
+            try:
+                result = subprocess.run(['systemctl', 'is-active', 'bluetooth'], 
+                                      capture_output=True, text=True, timeout=3)
+                if result.returncode == 0 and result.stdout.strip() == 'active':
+                    # Bluetooth service is active, but we need to verify hardware
+                    # Try to get adapter info via dbus
+                    try:
+                        result = subprocess.run(['dbus-send', '--system', '--print-reply', 
+                                               '--dest=org.bluez', '/', 
+                                               'org.freedesktop.DBus.ObjectManager.GetManagedObjects'], 
+                                              capture_output=True, text=True, timeout=3)
+                        if result.returncode == 0 and 'adapter' in result.stdout.lower():
+                            return True
+                    except (subprocess.TimeoutExpired, FileNotFoundError):
+                        pass
+            except (subprocess.TimeoutExpired, FileNotFoundError):
+                pass
+            
+            return False
+        except Exception:
+            # If all checks fail, assume no hardware
+            return False
+
+    def _handle_no_bluetooth_hardware(self):
+        """Handle the case when no Bluetooth hardware is available"""
+        self.bluetooth_icon.set_markup(icons.bluetooth_off)
+        self.bluetooth_status_text.set_label("No Bluetooth Hardware")
+        
+        # Gray out the entire button
+        for widget in self.widgets_list_internal:
+            widget.add_style_class("disabled")
+        
+        # Disable the button functionality
+        self.bluetooth_status_button.set_sensitive(False)
+        self.bluetooth_menu_button.set_sensitive(False)
+
+    def _periodic_hardware_check(self):
+        """Periodic hardware check to detect dynamic changes"""
+        self.refresh_hardware_status()
+        return True  # Repeat the check every 60 seconds
 
 class NightModeButton(Button):
     def __init__(self):

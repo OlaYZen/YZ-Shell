@@ -79,13 +79,31 @@ class BluetoothConnections(Box):
         self.bt_menu_button = self.buttons.bluetooth_menu_button
         self.bt_menu_label = self.buttons.bluetooth_menu_label
 
-        self.client = BluetoothClient(on_device_added=self.on_device_added)
+        # Try to initialize the Bluetooth client
+        try:
+            self.client = BluetoothClient(on_device_added=self.on_device_added)
+            self.hardware_available = True
+            
+            # Double-check hardware availability with system-level check
+            if not self._check_system_bluetooth_hardware():
+                self.hardware_available = False
+                self._handle_no_hardware()
+                return
+                
+        except Exception as e:
+            # Failed to initialize - check at system level
+            self.client = None
+            self.hardware_available = self._check_system_bluetooth_hardware()
+            if not self.hardware_available:
+                self._handle_no_hardware()
+                return
+
         self.scan_label = Label(name="bluetooth-scan-label", markup=icons.radar)
         self.scan_button = Button(
             name="bluetooth-scan",
             child=self.scan_label,
             tooltip_text="Scan for Bluetooth devices",
-            on_clicked=lambda *_: self.client.toggle_scan()
+            on_clicked=lambda *_: self.client.toggle_scan() if self.client else None
         )
         self.back_button = Button(
             name="bluetooth-back",
@@ -93,11 +111,12 @@ class BluetoothConnections(Box):
             on_clicked=lambda *_: self.widgets.show_notif()
         )
 
-        self.client.connect("notify::enabled", lambda *_: self.status_label())
-        self.client.connect(
-            "notify::scanning",
-            lambda *_: self.update_scan_label()
-        )
+        if self.client:
+            self.client.connect("notify::enabled", lambda *_: self.status_label())
+            self.client.connect(
+                "notify::scanning",
+                lambda *_: self.update_scan_label()
+            )
 
         self.paired_box = Box(spacing=2, orientation="vertical")
         self.available_box = Box(spacing=2, orientation="vertical")
@@ -124,10 +143,80 @@ class BluetoothConnections(Box):
             ),
         ]
 
-        self.client.notify("scanning")
-        self.client.notify("enabled")
+        if self.client:
+            self.client.notify("scanning")
+            self.client.notify("enabled")
+
+    def _handle_no_hardware(self):
+        """Handle the case when no Bluetooth hardware is available"""
+        # Notify the button about no hardware
+        if hasattr(self.buttons, '_handle_no_bluetooth_hardware'):
+            self.buttons._handle_no_bluetooth_hardware()
+
+    def _check_system_bluetooth_hardware(self):
+        """Check for Bluetooth hardware at system level"""
+        try:
+            import subprocess
+            import os
+            
+            # Method 1: Check bluetoothctl list (most reliable)
+            try:
+                result = subprocess.run(['bluetoothctl', 'list'], 
+                                      capture_output=True, text=True, timeout=3)
+                if result.returncode == 0:
+                    # Check if any controllers are listed
+                    output = result.stdout.strip()
+                    if output and 'Controller' in output:
+                        return True
+            except (subprocess.TimeoutExpired, FileNotFoundError):
+                pass
+            
+            # Method 2: Check rfkill list bluetooth
+            try:
+                result = subprocess.run(['rfkill', 'list', 'bluetooth'], 
+                                      capture_output=True, text=True, timeout=3)
+                if result.returncode == 0:
+                    output = result.stdout.strip()
+                    # Check if any bluetooth devices are listed
+                    if output and ': Bluetooth' in output:
+                        return True
+            except (subprocess.TimeoutExpired, FileNotFoundError):
+                pass
+            
+            # Method 3: Check hciconfig for active controllers
+            try:
+                result = subprocess.run(['hciconfig'], 
+                                      capture_output=True, text=True, timeout=3)
+                if result.returncode == 0:
+                    output = result.stdout.strip()
+                    # Only return True if we see actual controller info, not just "hci"
+                    if output and 'BD Address' in output:
+                        return True
+            except (subprocess.TimeoutExpired, FileNotFoundError):
+                pass
+            
+            return False
+        except Exception:
+            # If all checks fail, assume no hardware
+            return False
+
+    def toggle_power(self):
+        """Safely toggle Bluetooth power, handling missing hardware"""
+        if self.client and self.hardware_available:
+            try:
+                self.client.toggle_power()
+            except Exception:
+                # Hardware might have been disconnected
+                self.hardware_available = False
+                self._handle_no_hardware()
+        else:
+            # No hardware available - do nothing
+            pass
 
     def status_label(self):
+        if not self.client:
+            return
+            
         print(self.client.enabled)
         if self.client.enabled:
             self.bt_status_text.set_label("Enabled")
@@ -141,7 +230,7 @@ class BluetoothConnections(Box):
             self.bt_icon.set_markup(icons.bluetooth_off)
 
     def on_device_added(self, client: BluetoothClient, address: str):
-        if not (device := client.get_device(address)):
+        if not self.client or not (device := client.get_device(address)):
             return
         slot = BluetoothDeviceSlot(device)
 
@@ -150,6 +239,9 @@ class BluetoothConnections(Box):
         return self.available_box.add(slot)
 
     def update_scan_label(self):
+        if not self.client:
+            return
+            
         if self.client.scanning:
             self.scan_label.add_style_class("scanning")
             self.scan_button.add_style_class("scanning")

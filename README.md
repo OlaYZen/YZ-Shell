@@ -41,6 +41,19 @@ This fork includes several enhancements and improvements over the original Ax-Sh
 ### **📅 Interactive Date Display**
 - **Multi-Format Date Switching**: Clock widget now supports instant switching between multiple formats via mouse clicks - left click toggles time/European date (DD/MM/YYYY), right click for American format (MM-DD-YYYY), and middle click for ISO format (YYYY.MM.DD), providing quick access to different date conventions
 
+### **📡 Enhanced Network Management**
+- **Smart WiFi Connection**: Automatic detection and prioritization of saved networks with one-click reconnection
+- **Secure Network Authentication**: In-dashboard password prompt for protected WiFi networks with show/hide password functionality  
+- **Network Hardware Detection**: Robust WiFi hardware detection with graceful fallback when no hardware is available
+- **Visual Network Indicators**: Enhanced network status indicators with saved network stars (⭐) and security locks (🔒)
+- **Network Grouping**: Intelligent grouping of access points by SSID, showing strongest signal for each network
+
+### **🔵 Enhanced Bluetooth Management**
+- **Multi-Level Hardware Detection**: Comprehensive Bluetooth hardware detection using multiple system checks (bluetoothctl, rfkill, hciconfig, sysfs, systemctl)
+- **Dynamic Hardware Monitoring**: Periodic hardware checks (every 60 seconds) to detect USB Bluetooth adapters being plugged/unplugged
+- **Graceful Hardware Handling**: Proper UI states when no Bluetooth hardware is detected, with clear "No Bluetooth Hardware" messaging
+- **Robust Error Recovery**: Fallback mechanisms for hardware detection and connection handling
+
 ## 📊 Complete Feature List
 
 ### **🚀 Application Management**

@@ -144,27 +144,71 @@ class Wifi(Service):
         points: list[NM.AccessPoint] = self._device.get_access_points()
 
         def make_ap_dict(ap: NM.AccessPoint):
-            return {
-                "bssid": ap.get_bssid(),
-                # "address": ap.get_
-                "last_seen": ap.get_last_seen(),
-                "ssid": NM.utils_ssid_to_utf8(ap.get_ssid().get_data())
-                if ap.get_ssid()
-                else "Unknown",
-                "active-ap": self._ap,
-                "strength": ap.get_strength(),
-                "frequency": ap.get_frequency(),
-                "icon-name": {
-                    80: "network-wireless-signal-excellent-symbolic",
-                    60: "network-wireless-signal-good-symbolic",
-                    40: "network-wireless-signal-ok-symbolic",
-                    20: "network-wireless-signal-weak-symbolic",
-                    00: "network-wireless-signal-none-symbolic",
-                }.get(
-                    min(80, 20 * round(ap.get_strength() / 20)),
-                    "network-wireless-no-route-symbolic",
-                ),
-            }
+            try:
+                # Check if the access point is secured
+                flags = ap.get_flags()
+                wpa_flags = ap.get_wpa_flags()
+                rsn_flags = ap.get_rsn_flags()
+                
+                # Try different ways to check for privacy/security
+                try:
+                    is_secured = bool(wpa_flags or rsn_flags or (flags & NM.Flags80211ApFlags.PRIVACY))
+                except:
+                    # Fallback: just check WPA/RSN flags
+                    is_secured = bool(wpa_flags or rsn_flags)
+                
+                return {
+                    "bssid": ap.get_bssid(),
+                    # "address": ap.get_
+                    "last_seen": ap.get_last_seen(),
+                    "ssid": NM.utils_ssid_to_utf8(ap.get_ssid().get_data())
+                    if ap.get_ssid()
+                    else "Unknown",
+                    "active-ap": self._ap,
+                    "strength": ap.get_strength(),
+                    "frequency": ap.get_frequency(),
+                    "secured": is_secured,
+                    "flags": flags,
+                    "wpa_flags": wpa_flags,
+                    "rsn_flags": rsn_flags,
+                    "icon-name": {
+                        80: "network-wireless-signal-excellent-symbolic",
+                        60: "network-wireless-signal-good-symbolic",
+                        40: "network-wireless-signal-ok-symbolic",
+                        20: "network-wireless-signal-weak-symbolic",
+                        00: "network-wireless-signal-none-symbolic",
+                    }.get(
+                        min(80, 20 * round(ap.get_strength() / 20)),
+                        "network-wireless-no-route-symbolic",
+                    ),
+                }
+            except Exception as e:
+                print(f"Error processing access point: {e}")
+                # Return basic info if there's an error
+                return {
+                    "bssid": ap.get_bssid(),
+                    "last_seen": ap.get_last_seen(),
+                    "ssid": NM.utils_ssid_to_utf8(ap.get_ssid().get_data())
+                    if ap.get_ssid()
+                    else "Unknown",
+                    "active-ap": self._ap,
+                    "strength": ap.get_strength(),
+                    "frequency": ap.get_frequency(),
+                    "secured": False,  # Default to unsecured if we can't determine
+                    "flags": 0,
+                    "wpa_flags": 0,
+                    "rsn_flags": 0,
+                    "icon-name": {
+                        80: "network-wireless-signal-excellent-symbolic",
+                        60: "network-wireless-signal-good-symbolic",
+                        40: "network-wireless-signal-ok-symbolic",
+                        20: "network-wireless-signal-weak-symbolic",
+                        00: "network-wireless-signal-none-symbolic",
+                    }.get(
+                        min(80, 20 * round(ap.get_strength() / 20)),
+                        "network-wireless-no-route-symbolic",
+                    ),
+                }
 
         return list(map(make_ap_dict, points))
 
@@ -279,12 +323,12 @@ class NetworkClient(Service):
 
         if wifi_device:
             self.wifi_device = Wifi(self._client, wifi_device)
-            self.emit("device-ready")
 
         if ethernet_device:
             self.ethernet_device = Ethernet(client=self._client, device=ethernet_device)
-            self.emit("device-ready")
 
+        # Always emit device-ready signal, even if no devices found
+            self.emit("device-ready")
         self.notify("primary-device")
 
     def _get_device(self, device_type) -> Any:
@@ -294,7 +338,6 @@ class NetworkClient(Service):
                 x
                 for x in devices
                 if x.get_device_type() == device_type
-                and x.get_active_connection() is not None
             ),
             None,
         )
@@ -312,11 +355,101 @@ class NetworkClient(Service):
             else None
         )
 
-    def connect_wifi_bssid(self, bssid):
-        # We are using nmcli here, idk im lazy
-        exec_shell_command_async(
-            f"nmcli device wifi connect {bssid}", lambda *args: print(args)
-        )
+    def get_saved_connections(self):
+        """Get list of saved WiFi connection SSIDs"""
+        if not self._client:
+            return []
+        
+        saved_connections = []
+        try:
+            connections = self._client.get_connections()
+            for conn in connections:
+                if conn.get_connection_type() == "802-11-wireless":
+                    wireless_setting = conn.get_setting_wireless()
+                    if wireless_setting:
+                        ssid_bytes = wireless_setting.get_ssid()
+                        if ssid_bytes:
+                            ssid = NM.utils_ssid_to_utf8(ssid_bytes.get_data())
+                            if ssid:
+                                saved_connections.append(ssid)
+        except Exception as e:
+            print(f"Error getting saved connections: {e}")
+        
+        return saved_connections
+    
+    def is_network_saved(self, ssid):
+        """Check if a network is already saved in NetworkManager"""
+        saved_networks = self.get_saved_connections()
+        return ssid in saved_networks
+    
+    def activate_saved_connection(self, ssid):
+        """Try to activate a saved connection by SSID"""
+        if not self._client or not self.wifi_device:
+            return False
+            
+        try:
+            connections = self._client.get_connections()
+            for conn in connections:
+                if conn.get_connection_type() == "802-11-wireless":
+                    wireless_setting = conn.get_setting_wireless()
+                    if wireless_setting:
+                        ssid_bytes = wireless_setting.get_ssid()
+                        if ssid_bytes:
+                            saved_ssid = NM.utils_ssid_to_utf8(ssid_bytes.get_data())
+                            if saved_ssid == ssid:
+                                # Found the saved connection, try to activate it
+                                self._client.activate_connection_async(
+                                    conn, self.wifi_device._device, None, None,
+                                    lambda client, result: self._on_connection_activated(client, result, ssid)
+                                )
+                                return True
+        except Exception as e:
+            print(f"Error activating saved connection: {e}")
+        
+        return False
+    
+    def _on_connection_activated(self, client, result, ssid):
+        """Callback for connection activation"""
+        try:
+            client.activate_connection_finish(result)
+            print(f"Successfully activated saved connection for {ssid}")
+        except Exception as e:
+            print(f"Failed to activate saved connection for {ssid}: {e}")
+
+    def connect_wifi_bssid(self, bssid, password=None, ssid=None):
+        # First, check if this is a saved network and try to activate it
+        if ssid and ssid != "Unknown" and self.is_network_saved(ssid):
+            print(f"Found saved connection for {ssid}, attempting to activate...")
+            if self.activate_saved_connection(ssid):
+                return  # Successfully started activation process
+            else:
+                print(f"Failed to activate saved connection, falling back to new connection")
+        
+        # Try connecting by SSID first (more reliable), fallback to BSSID if needed
+        if ssid and ssid != "Unknown":
+            # Connect by SSID (preferred method)
+            if password:
+                exec_shell_command_async(
+                    f"nmcli device wifi connect '{ssid}' password '{password}'", 
+                    lambda *args: print(f"Connection result: {args}")
+                )
+            else:
+                exec_shell_command_async(
+                    f"nmcli device wifi connect '{ssid}'", 
+                    lambda *args: print(f"Connection result: {args}")
+                )
+        else:
+            # Fallback to BSSID method
+            if password:
+                exec_shell_command_async(
+                    f"nmcli device wifi connect {bssid} password '{password}'", 
+                    lambda *args: print(f"Connection result: {args}")
+                )
+            else:
+                exec_shell_command_async(
+                    f"nmcli device wifi connect {bssid}", 
+                    lambda *args: print(f"Connection result: {args}")
+                )
 
     @Property(str, "readable")
     def primary_device(self) -> Literal["wifi", "wired"] | None:

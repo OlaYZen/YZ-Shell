@@ -929,6 +929,12 @@ class Notch(Window):
         if (self.stack.get_visible_child() == self.dashboard and 
             self.dashboard.stack.get_visible_child() == self.dashboard.widgets):
             
+            # Check if password prompt is active - don't intercept typing if it is
+            calendar_stack = self.dashboard.widgets.calendar_stack
+            if (hasattr(self.dashboard.widgets, 'password_prompt') and 
+                calendar_stack.get_visible_child() == self.dashboard.widgets.password_prompt):
+                return False  # Let the password entry handle the typing
+            
 
             if self.stack.get_visible_child() == self.launcher:
                 return False
