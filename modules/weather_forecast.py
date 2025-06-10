@@ -68,20 +68,11 @@ class WeatherForecast(Box):
         
         self.current_weather_container.add(self.current_weather_main)
         self.current_weather_container.add(self.current_weather_details)
-        
-        # Add separator
-        self.current_separator = Label(
-            name="current-weather-separator", 
-            markup="<span size='small' color='gray'>━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━</span>",
-            h_align="center"
-        )
-        
+                
         self.add(self.current_weather_container)
-        self.add(self.current_separator)
         
         # Initially hide current weather section
         self.current_weather_container.set_visible(False)
-        self.current_separator.set_visible(False)
         
         # Loading indicator
         self.loading_label = Label(
@@ -144,7 +135,6 @@ class WeatherForecast(Box):
         
         # Show the current weather container
         self.current_weather_container.set_visible(True)
-        self.current_separator.set_visible(True)
         
         return GLib.SOURCE_REMOVE
 
@@ -253,10 +243,6 @@ class WeatherForecast(Box):
         day_box.add(day_header)
         day_box.add(periods_box)
         
-        # Add separator line
-        separator = Label(name="forecast-separator", markup="<span size='small' color='black'>─────────────────────────────</span>")
-        day_box.add(separator)
-        
         return day_box
 
     def fetch_weather_forecast(self):
@@ -323,13 +309,17 @@ class WeatherForecast(Box):
                     date = time_obj.date()
                     hour = time_obj.hour
                     
-                    # Process next 3 days, but skip today if it's past midnight (00:00)
+                    # Process today and next 2 days (3 days total)
                     days_diff = (date - today).days
-                    if current_hour > 0 and days_diff == 0:
-                        # Skip today if we're past midnight
-                        continue
                     if days_diff < 0 or days_diff > 2:
                         continue
+                    
+                    # For today, only show future time periods
+                    if days_diff == 0:
+                        period_hour_map = {'00:00': 0, '06:00': 6, '12:00': 12, '18:00': 18}
+                        period = self.get_time_period_name(hour)
+                        if period in period_hour_map and period_hour_map[period] < current_hour:
+                            continue
                     
                     if date not in daily_data:
                         daily_data[date] = {
@@ -425,7 +415,6 @@ class WeatherForecast(Box):
         """Show error message"""
         self.loading_label.set_visible(False)
         self.current_weather_container.set_visible(False)
-        self.current_separator.set_visible(False)
         self.forecast_container.set_visible(False)
         self.error_label.set_visible(True)
         
