@@ -13,6 +13,18 @@
   </a>
 </p>
 
+> ## ⚠️ **DISCLAIMER** ⚠️
+> 
+> **YZ-Shell is designed specifically for Arch Linux and requires AUR packages and Arch-specific configurations.**
+>
+> ✅ **SUPPORTED:**
+> - Arch Linux
+> - Arch-based distributions (Manjaro, EndeavourOS, etc.)
+> 
+> 🚫 **NOT COMPATIBLE WITH:**
+> - NixOS
+> - Other Linux distributions
+
 A feature-rich, modular desktop shell for Hyprland with comprehensive functionality including application management, system monitoring, productivity tools, and seamless desktop integration.
 
 > **Note**: This is a fork of [Ax-Shell](https://github.com/Axenide/Ax-Shell) with additional features and enhancements.
