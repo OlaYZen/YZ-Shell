@@ -132,8 +132,6 @@ This fork includes several enhancements and improvements over the original Ax-Sh
 - CSS-based styling system
 - Corner indicators and visual enhancements
 
----
-
 ## 📋 Table of Contents
 
 - [🚀 Features Overview](#-features-overview)
@@ -145,8 +143,6 @@ This fork includes several enhancements and improvements over the original Ax-Sh
 - [📖 Usage Guide](#-usage-guide)
 - [🛠️ Configuration](#️-configuration)
 - [🔗 Dependencies](#-dependencies)
-
----
 
 ## 🚀 Features Overview
 
@@ -188,8 +184,6 @@ This fork includes several enhancements and improvements over the original Ax-Sh
 - **Configurable Components** - Show/hide any UI element
 - **Custom Styling** - CSS-based theming system
 
----
-
 ## 📱 Core Components
 
 ### **Top Bar**
@@ -230,8 +224,6 @@ This fork includes several enhancements and improvements over the original Ax-Sh
 - **Overview** - Workspace and window management
 - **Power Menu** - System power options
 
----
-
 ## 🔧 System Integration
 
 ### **Hyprland Integration**
@@ -252,8 +244,6 @@ This fork includes several enhancements and improvements over the original Ax-Sh
 - **Desktop Entries** - Parses `.desktop` files for applications
 - **Icon Themes** - System icon theme support
 - **File Manager Integration** - Opens directories in default file manager
-
----
 
 ## 🌐 External APIs & Services
 
@@ -285,8 +275,6 @@ This fork includes several enhancements and improvements over the original Ax-Sh
 - **Zed Sans Font**: GitHub Releases
   - **Endpoint**: `https://github.com/zed-industries/zed-fonts/releases/`
   - **Usage**: UI typography (downloaded on first run)
-
----
 
 ## 🔒 Privacy & Security
 
@@ -344,8 +332,6 @@ This fork includes several enhancements and improvements over the original Ax-Sh
 - Configuration files are user-readable only
 - No automatic data synchronization
 
----
-
 ## ⚙️ Installation
 
 ### **Automatic Installation (Arch Linux)**
@@ -383,8 +369,6 @@ noto-fonts-emoji ttf-zed-sans-mono-nerd
 git clone https://github.com/OlaYZen/YZ-Shell.git ~/.config/YZ-Shell
 uwsm -- app python ~/.config/YZ-Shell/main.py > /dev/null 2>&1 & disown
 ```
-
----
 
 ## 📖 Usage Guide
 
@@ -505,8 +489,6 @@ uwsm -- app python ~/.config/YZ-Shell/main.py > /dev/null 2>&1 & disown
 - **Pin Manager ↔ File System**: Real-time file monitoring
 - **Media Player ↔ Multiple Apps**: Seamless switching between players
 
----
-
 ## 🛠️ Configuration
 
 ### **Main Configuration** (`~/.config/YZ-Shell/config/config.json`)
@@ -554,8 +536,6 @@ All bar components can be individually toggled:
 - **Panel Themes**: Notch, Panel, Overlay
 - **Adaptive Colors**: Automatic theme generation from wallpapers
 
----
-
 ## 🔗 Dependencies
 
 ### **Core Framework**
@@ -583,9 +563,6 @@ All bar components can be individually toggled:
 - **Nvtop** - GPU monitoring
 - **Hypridle/Hyprlock** - Idle management and screen locking
 
----
-
----
 
 <h2><sub><img src="https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/master/Emojis/Travel%20and%20places/Rocket.png" alt="Rocket" width="25" height="25" /></sub> Roadmap</h2>
 
@@ -628,8 +605,6 @@ All bar components can be individually toggled:
 - [ ] Multimodal AI Assistant
 - [ ] OSD
 - [ ] OTP Manager
-
----
 
 ## Support
 
