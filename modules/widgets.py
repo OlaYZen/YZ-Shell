@@ -1,6 +1,6 @@
 import gi
 
-gi.require_version('Gtk', '3.0')
+gi.require_version("Gtk", "3.0")
 from fabric.widgets.box import Box
 from fabric.widgets.label import Label
 from fabric.widgets.stack import Stack
@@ -32,9 +32,15 @@ class Widgets(Box):
         )
 
         vertical_layout = False
-
-        if data.PANEL_THEME == "Panel" and (data.BAR_POSITION in ["Left", "Right"] or data.PANEL_POSITION in ["Start", "End"]):
+        if data.PANEL_THEME == "Panel" and (
+            data.BAR_POSITION in ["Left", "Right"]
+            or data.PANEL_POSITION in ["Start", "End"]
+        ):
             vertical_layout = True
+
+        calendar_view_mode = "week" if vertical_layout else "month"
+
+        self.calendar = Calendar(view_mode=calendar_view_mode)
 
         self.notch = kwargs["notch"]
 
@@ -115,7 +121,7 @@ class Widgets(Box):
             h_align="fill",
             children=[
                 self.applet_stack,
-            ]
+            ],
         )
 
         self.children_1 = [
@@ -156,15 +162,18 @@ class Widgets(Box):
                 self.buttons,
                 self.controls,
                 self.container_1,
-            ]
+            ],
         )
 
-        self.children_3 = [
-            self.player,
-            self.container_2,
-        ] if not vertical_layout else [
-            self.container_2,
-        ]
+        if not vertical_layout:
+            self.children_3 = [
+                self.player,
+                self.container_2,
+            ]
+        else:  # vertical_layout
+            self.children_3 = [
+                self.container_2,
+            ]
 
         self.container_3 = Box(
             name="container-3",

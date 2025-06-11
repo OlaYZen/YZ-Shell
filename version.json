@@ -1,7 +1,7 @@
 {
-	"version": "0.0.13",
+	"version": "0.0.14",
 	"changelog": [
-    "<b>fix:</b> swww changed to swww-git",
-    "<b>fix:</b> Reverted notch to previous commit"
+    "<b>feat:</b> Added weekly calendar on vertical panel layout.",
+    "<b>tweak:</b> Wallpaper transition set to a fast fade. Feels snappier."
 	]
 }

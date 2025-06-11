@@ -8,17 +8,20 @@ from pathlib import Path
 import gi
 import toml
 
-gi.require_version('Gtk', '3.0')
+gi.require_version("Gtk", "3.0")
 from fabric.utils.helpers import exec_shell_command_async
 from gi.repository import GLib
 
 # Importar settings_constants para DEFAULTS
 from . import settings_constants
 from .data import (  # CONFIG_DIR, HOME_DIR no se usan aquí directamente
-    APP_NAME, APP_NAME_CAP)
+    APP_NAME,
+    APP_NAME_CAP,
+)
 
 # Global variable to store binding variables, managed by this module
-bind_vars = {} # Se inicializa vacío, load_bind_vars lo poblará
+bind_vars = {}  # Se inicializa vacío, load_bind_vars lo poblará
+
 
 def deep_update(target: dict, update: dict) -> dict:
     """
@@ -33,7 +36,8 @@ def deep_update(target: dict, update: dict) -> dict:
         else:
             # De lo contrario, simplemente establece/sobrescribe el valor.
             target[key] = value
-    return target # Aunque modifica in-place, devolverlo es una convención común
+    return target  # Aunque modifica in-place, devolverlo es una convención común
+
 
 def ensure_matugen_config():
     """
@@ -41,54 +45,62 @@ def ensure_matugen_config():
     with the expected settings.
     """
     expected_config = {
-        'config': {
-            'reload_apps': True,
-            'wallpaper': {
-                'command': 'swww',
-                'arguments': [
-                    'img', '-t', 'outer',
-                    '--transition-duration', '1.5',
-                    '--transition-step', '255',
-                    '--transition-fps', '60',
-                    '-f', 'Nearest'
+        "config": {
+            "reload_apps": True,
+            "wallpaper": {
+                "command": "swww",
+                "arguments": [
+                    "img",
+                    "-t",
+                    "fade",
+                    "--transition-duration",
+                    "0.5",
+                    "--transition-step",
+                    "255",
+                    "--transition-fps",
+                    "60",
+                    "-f",
+                    "Nearest",
                 ],
-                'set': True
+                "set": True,
             },
-            'custom_colors': {
-                'red': {'color': "#FF0000", 'blend': True},
-                'green': {'color': "#00FF00", 'blend': True},
-                'yellow': {'color': "#FFFF00", 'blend': True},
-                'blue': {'color': "#0000FF", 'blend': True},
-                'magenta': {'color': "#FF00FF", 'blend': True},
-                'cyan': {'color': "#00FFFF", 'blend': True},
-                'white': {'color': "#FFFFFF", 'blend': True}
-            }
+            "custom_colors": {
+                "red": {"color": "#FF0000", "blend": True},
+                "green": {"color": "#00FF00", "blend": True},
+                "yellow": {"color": "#FFFF00", "blend": True},
+                "blue": {"color": "#0000FF", "blend": True},
+                "magenta": {"color": "#FF00FF", "blend": True},
+                "cyan": {"color": "#00FFFF", "blend": True},
+                "white": {"color": "#FFFFFF", "blend": True},
+            },
         },
-        'templates': {
-            'hyprland': {
-                'input_path': f'~/.config/{APP_NAME_CAP}/config/matugen/templates/hyprland-colors.conf',
-                'output_path': f'~/.config/{APP_NAME_CAP}/config/hypr/colors.conf'
+        "templates": {
+            "hyprland": {
+                "input_path": f"~/.config/{APP_NAME_CAP}/config/matugen/templates/hyprland-colors.conf",
+                "output_path": f"~/.config/{APP_NAME_CAP}/config/hypr/colors.conf",
             },
-            f'{APP_NAME}': {
-                'input_path': f'~/.config/{APP_NAME_CAP}/config/matugen/templates/{APP_NAME}.css',
-                'output_path': f'~/.config/{APP_NAME_CAP}/styles/colors.css',
-                'post_hook': f"fabric-cli exec {APP_NAME} 'app.set_css()' &"
-            }
-        }
+            f"{APP_NAME}": {
+                "input_path": f"~/.config/{APP_NAME_CAP}/config/matugen/templates/{APP_NAME}.css",
+                "output_path": f"~/.config/{APP_NAME_CAP}/styles/colors.css",
+                "post_hook": f"fabric-cli exec {APP_NAME} 'app.set_css()' &",
+            },
+        },
     }
 
-    config_path = os.path.expanduser('~/.config/matugen/config.toml')
+    config_path = os.path.expanduser("~/.config/matugen/config.toml")
     os.makedirs(os.path.dirname(config_path), exist_ok=True)
 
     existing_config = {}
     if os.path.exists(config_path):
         try:
-            with open(config_path, 'r') as f:
+            with open(config_path, "r") as f:
                 existing_config = toml.load(f)
-            shutil.copyfile(config_path, config_path + '.bak')
+            shutil.copyfile(config_path, config_path + ".bak")
         except toml.TomlDecodeError:
-            print(f"Warning: Could not decode TOML from {config_path}. A new default config will be created.")
-            existing_config = {} # Resetear si está corrupto
+            print(
+                f"Warning: Could not decode TOML from {config_path}. A new default config will be created."
+            )
+            existing_config = {}  # Resetear si está corrupto
         except Exception as e:
             print(f"Error reading or backing up {config_path}: {e}")
             # existing_config podría estar parcialmente cargado o vacío.
@@ -100,39 +112,54 @@ def ensure_matugen_config():
     # Para ser más seguros, podemos pasar una copia si existing_config no debe cambiar.
     # merged_config = deep_update(existing_config.copy(), expected_config)
     # O si existing_config puede ser modificado:
-    merged_config = deep_update(existing_config, expected_config) # existing_config se modifica in-place
+    merged_config = deep_update(
+        existing_config, expected_config
+    )  # existing_config se modifica in-place
 
     try:
-        with open(config_path, 'w') as f:
+        with open(config_path, "w") as f:
             toml.dump(merged_config, f)
     except Exception as e:
         print(f"Error writing matugen config to {config_path}: {e}")
 
-
     current_wall = os.path.expanduser("~/.current.wall")
-    hypr_colors = os.path.expanduser(f"~/.config/{APP_NAME_CAP}/config/hypr/colors.conf")
+    hypr_colors = os.path.expanduser(
+        f"~/.config/{APP_NAME_CAP}/config/hypr/colors.conf"
+    )
     css_colors = os.path.expanduser(f"~/.config/{APP_NAME_CAP}/styles/colors.css")
-    
-    if not os.path.exists(current_wall) or not os.path.exists(hypr_colors) or not os.path.exists(css_colors):
+
+    if (
+        not os.path.exists(current_wall)
+        or not os.path.exists(hypr_colors)
+        or not os.path.exists(css_colors)
+    ):
         os.makedirs(os.path.dirname(hypr_colors), exist_ok=True)
         os.makedirs(os.path.dirname(css_colors), exist_ok=True)
-        
+
         image_path = ""
         if not os.path.exists(current_wall):
-            example_wallpaper_path = os.path.expanduser(f"~/.config/{APP_NAME_CAP}/assets/wallpapers_example/example-1.jpg")
+            example_wallpaper_path = os.path.expanduser(
+                f"~/.config/{APP_NAME_CAP}/assets/wallpapers_example/example-1.jpg"
+            )
             if os.path.exists(example_wallpaper_path):
                 try:
                     # Si ya existe (posiblemente un enlace roto o archivo regular), eliminar y re-enlazar
-                    if os.path.lexists(current_wall): # lexists para no seguir el enlace si es uno
+                    if os.path.lexists(
+                        current_wall
+                    ):  # lexists para no seguir el enlace si es uno
                         os.remove(current_wall)
                     os.symlink(example_wallpaper_path, current_wall)
                     image_path = example_wallpaper_path
                 except Exception as e:
                     print(f"Error creating symlink for wallpaper: {e}")
         else:
-            image_path = os.path.realpath(current_wall) if os.path.islink(current_wall) else current_wall
-        
-        if image_path and os.path.exists(image_path): 
+            image_path = (
+                os.path.realpath(current_wall)
+                if os.path.islink(current_wall)
+                else current_wall
+            )
+
+        if image_path and os.path.exists(image_path):
             print(f"Generating color theme from wallpaper: {image_path}")
             try:
                 matugen_cmd = f"matugen image '{image_path}'"
@@ -143,9 +170,13 @@ def ensure_matugen_config():
             except Exception as e:
                 print(f"Error initiating matugen: {e}")
         elif not image_path:
-            print("Warning: No wallpaper path determined to generate matugen theme from.")
-        else: # image_path existe pero el archivo no
-            print(f"Warning: Wallpaper at {image_path} not found. Cannot generate matugen theme.")
+            print(
+                "Warning: No wallpaper path determined to generate matugen theme from."
+            )
+        else:  # image_path existe pero el archivo no
+            print(
+                f"Warning: Wallpaper at {image_path} not found. Cannot generate matugen theme."
+            )
 
 
 def load_bind_vars():
@@ -153,17 +184,19 @@ def load_bind_vars():
     Load saved key binding variables from JSON, if available.
     Populates the global `bind_vars` in-place.
     """
-    global bind_vars # Necesario para modificar el objeto global bind_vars
+    global bind_vars  # Necesario para modificar el objeto global bind_vars
 
     # 1. Limpiar el diccionario bind_vars existente.
     bind_vars.clear()
     # 2. Actualizarlo con una copia de DEFAULTS.
-    bind_vars.update(settings_constants.DEFAULTS.copy()) # Usar .copy() para no modificar DEFAULTS accidentalmente
+    bind_vars.update(
+        settings_constants.DEFAULTS.copy()
+    )  # Usar .copy() para no modificar DEFAULTS accidentalmente
 
-    config_json = os.path.expanduser(f'~/.config/{APP_NAME_CAP}/config/config.json')
+    config_json = os.path.expanduser(f"~/.config/{APP_NAME_CAP}/config/config.json")
     if os.path.exists(config_json):
         try:
-            with open(config_json, 'r') as f:
+            with open(config_json, "r") as f:
                 saved_vars = json.load(f)
                 # 3. Usar deep_update para fusionar saved_vars en el bind_vars existente.
                 deep_update(bind_vars, saved_vars)
@@ -171,7 +204,7 @@ def load_bind_vars():
                 # La lógica para asegurar la estructura de diccionarios anidados
                 # como 'metrics_visible' y 'metrics_small_visible'
                 # debe operar sobre el 'bind_vars' ya actualizado.
-                for vis_key in ['metrics_visible', 'metrics_small_visible']:
+                for vis_key in ["metrics_visible", "metrics_small_visible"]:
                     # Asegurar que la clave exista en DEFAULTS como referencia de estructura
                     if vis_key in settings_constants.DEFAULTS:
                         default_sub_dict = settings_constants.DEFAULTS[vis_key]
@@ -199,26 +232,30 @@ def load_bind_vars():
                 elif 'ical_sources' not in bind_vars:
                     bind_vars['ical_sources'] = []
         except json.JSONDecodeError:
-            print(f"Warning: Could not decode JSON from {config_json}. Using defaults (already initialized).")
+            print(
+                f"Warning: Could not decode JSON from {config_json}. Using defaults (already initialized)."
+            )
             # bind_vars ya está poblado con DEFAULTS, no se necesita acción adicional aquí.
         except Exception as e:
-            print(f"Error loading config from {config_json}: {e}. Using defaults (already initialized).")
+            print(
+                f"Error loading config from {config_json}: {e}. Using defaults (already initialized)."
+            )
             # bind_vars ya está poblado con DEFAULTS.
     # else:
-        # Si config_json no existe, bind_vars ya está poblado con DEFAULTS.
-        # print(f"Config file {config_json} not found. Using defaults (already initialized).")
+    # Si config_json no existe, bind_vars ya está poblado con DEFAULTS.
+    # print(f"Config file {config_json} not found. Using defaults (already initialized).")
 
 
 def generate_hyprconf() -> str:
     """
     Generate the Hypr configuration string using the current bind_vars.
     """
-    home = os.path.expanduser('~')
+    home = os.path.expanduser("~")
     # Determine animation type based on bar position
-    bar_position = bind_vars.get('bar_position', 'Top')
+    bar_position = bind_vars.get("bar_position", "Top")
     is_vertical = bar_position in ["Left", "Right"]
     animation_type = "slidefadevert" if is_vertical else "slidefade"
-    
+
     return f"""exec-once = uwsm-app $(python {home}/.config/{APP_NAME_CAP}/main.py)
 exec = pgrep -x "hypridle" > /dev/null || uwsm app -- hypridle
 exec = uwsm app -- swww-daemon
@@ -297,17 +334,21 @@ animations {{
 }}
 """
 
+
 def ensure_face_icon():
     """
     Ensure the face icon exists. If not, copy the default icon.
     """
     face_icon_path = os.path.expanduser("~/.face.icon")
-    default_icon_path = os.path.expanduser(f"~/.config/{APP_NAME_CAP}/assets/default.png")
+    default_icon_path = os.path.expanduser(
+        f"~/.config/{APP_NAME_CAP}/assets/default.png"
+    )
     if not os.path.exists(face_icon_path) and os.path.exists(default_icon_path):
         try:
             shutil.copy(default_icon_path, face_icon_path)
         except Exception as e:
             print(f"Error copying default face icon: {e}")
+
 
 def backup_and_replace(src: str, dest: str, config_name: str):
     """
@@ -320,7 +361,9 @@ def backup_and_replace(src: str, dest: str, config_name: str):
             # os.makedirs(os.path.dirname(backup_path), exist_ok=True)
             shutil.copy(dest, backup_path)
             print(f"{config_name} config backed up to {backup_path}")
-        os.makedirs(os.path.dirname(dest), exist_ok=True) # Ensure dest directory exists
+        os.makedirs(
+            os.path.dirname(dest), exist_ok=True
+        )  # Ensure dest directory exists
         shutil.copy(src, dest)
         print(f"{config_name} config replaced from {src}")
     except Exception as e:
@@ -352,12 +395,18 @@ def start_config():
     print(f"{time.time():.4f}: start_config: Initiating hyprctl reload...")
     try:
         # subprocess.run(["hyprctl", "reload"], check=True, capture_output=True, text=True)
-        exec_shell_command_async("hyprctl reload") # Mantener async para no bloquear
-        print(f"{time.time():.4f}: start_config: Hyprland configuration reload initiated.")
+        exec_shell_command_async("hyprctl reload")  # Mantener async para no bloquear
+        print(
+            f"{time.time():.4f}: start_config: Hyprland configuration reload initiated."
+        )
     except FileNotFoundError:
-         print("Error: hyprctl command not found. Cannot reload Hyprland.")
-    except subprocess.CalledProcessError as e: # Si usáramos subprocess.run con check=True
-         print(f"Error reloading Hyprland with hyprctl: {e}\nOutput:\n{e.stdout}\n{e.stderr}")
+        print("Error: hyprctl command not found. Cannot reload Hyprland.")
+    except (
+        subprocess.CalledProcessError
+    ) as e:  # Si usáramos subprocess.run con check=True
+        print(
+            f"Error reloading Hyprland with hyprctl: {e}\nOutput:\n{e.stdout}\n{e.stderr}"
+        )
     except Exception as e:
-         print(f"An error occurred initiating hyprctl reload: {e}")
+        print(f"An error occurred initiating hyprctl reload: {e}")
     print(f"{time.time():.4f}: start_config: Finished initiating hyprctl reload.")
