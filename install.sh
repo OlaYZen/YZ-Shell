@@ -27,6 +27,7 @@ PACKAGES=(
   playerctl
   python-fabric-git
   python-gobject
+  python-icalendar
   python-ijson
   python-numpy
   python-pillow

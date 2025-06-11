@@ -102,7 +102,34 @@ class MetricsProvider:
             elif output:
                 info = json.loads(output)
                 try:
-                    self.gpu = [int(v["gpu_util"][:-1]) for v in info]
+                    # More robust parsing with better None checks
+                    if info is None:
+                        logger.warning("nvtop returned null JSON data")
+                        self.gpu = []
+                    elif isinstance(info, list):
+                        gpu_values = []
+                        for v in info:
+                            if v is not None and isinstance(v, dict) and "gpu_util" in v:
+                                gpu_util_str = v["gpu_util"]
+                                if gpu_util_str is None:
+                                    # GPU data not available yet, use 0
+                                    gpu_values.append(0)
+                                elif isinstance(gpu_util_str, str) and gpu_util_str.endswith('%'):
+                                    try:
+                                        gpu_values.append(int(gpu_util_str[:-1]))
+                                    except (ValueError, TypeError):
+                                        logger.warning(f"Could not parse gpu_util value: {gpu_util_str}")
+                                        gpu_values.append(0)
+                                else:
+                                    # Unexpected format, but don't spam logs - just use 0
+                                    gpu_values.append(0)
+                            else:
+                                # Invalid GPU entry, use 0
+                                gpu_values.append(0)
+                        self.gpu = gpu_values
+                    else:
+                        logger.warning(f"Unexpected nvtop JSON format: {type(info)}")
+                        self.gpu = []
                 except (KeyError, ValueError, TypeError) as e:
                     logger.error(f"Failed parsing nvtop JSON: {e}")
                     self.gpu = []

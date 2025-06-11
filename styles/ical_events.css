@@ -1,0 +1,80 @@
+#ical-events-applet {
+  /* Remove border - will be on wrapper */
+  padding: 4px;
+}
+
+#ical-header {
+  border: 2px solid var(--surface);
+  padding: 4px;
+  border-radius: 12px;
+}
+
+#ical-date-title {
+  font-weight: bold;
+  color: var(--foreground);
+}
+
+#ical-back {
+  background-color: var(--surface);
+  border-radius: 8px;
+  padding: 4px;
+}
+
+#ical-back:hover {
+  background-color: var(--surface-bright);
+}
+
+#ical-back:active {
+  background-color: var(--primary);
+}
+
+#ical-back-label {
+  color: var(--primary);
+  font-size: 20px;
+}
+
+#ical-back:active #ical-back-label {
+  color: var(--shadow);
+}
+
+#ical-events-scrolled-window {
+  /* Height will be controlled by the scrolled window's natural sizing */
+}
+
+#ical-event-slot {
+  border: 2px solid var(--surface);
+  border-radius: 12px;
+  padding: 4px;
+  margin: 2px 0;
+}
+
+#ical-event-title {
+  font-weight: bold;
+  color: var(--foreground);
+}
+
+#ical-event-time {
+  font-size: 11px;
+  color: var(--outline);
+  margin-top: 2px;
+}
+
+#ical-event-description {
+  font-size: 11px;
+  color: var(--foreground);
+  margin-top: 4px;
+  opacity: 0.8;
+}
+
+#ical-event-color {
+  font-size: 14px;
+  margin-right: 4px;
+}
+
+#ical-no-events {
+  color: var(--outline);
+  font-style: italic;
+  padding: 20px;
+}
+
+ 

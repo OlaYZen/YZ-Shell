@@ -21,9 +21,11 @@ class PasswordPrompt(Box):
             **kwargs,
         )
         
-        # Apply the same width constraints as calendar
-        self.set_halign(Gtk.Align.CENTER)
-        self.set_hexpand(False)
+        # Expand to fill available space like calendar does
+        self.set_halign(Gtk.Align.FILL)
+        self.set_hexpand(True)
+        self.set_valign(Gtk.Align.FILL)
+        self.set_vexpand(True)
         
         self.widgets = kwargs.get("widgets")
         self.on_connect_callback = None
@@ -65,6 +67,7 @@ class PasswordPrompt(Box):
             name="password-entry",
             placeholder_text="Enter network password",
             visibility=False,
+            h_expand=True,  # Expand to fill available width
         )
         self.password_entry.connect("activate", self._on_entry_activate)
         
@@ -79,6 +82,7 @@ class PasswordPrompt(Box):
         password_box = Box(
             orientation="horizontal",
             spacing=8,
+            h_expand=True,  # Expand to fill available width
             children=[self.password_entry, self.show_password_button]
         )
         
@@ -87,17 +91,20 @@ class PasswordPrompt(Box):
             name="password-cancel-button",
             label="Cancel",
             on_clicked=self._on_cancel_clicked,
+            h_expand=True,  # Expand to fill available width
         )
         
         self.connect_button = Button(
             name="password-connect-button",
             label="Connect",
             on_clicked=self._on_connect_clicked,
+            h_expand=True,  # Expand to fill available width
         )
         
         button_box = Box(
             orientation="horizontal",
             spacing=8,
+            h_expand=True,  # Expand to fill available width
             children=[self.cancel_button, self.connect_button]
         )
         
@@ -106,6 +113,7 @@ class PasswordPrompt(Box):
             name="password-content",
             orientation="vertical",
             spacing=12,
+            h_expand=True,  # Expand to fill available width
             children=[
                 self.network_info_text,
                 self.network_ssid_label,

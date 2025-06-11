@@ -185,6 +185,19 @@ def load_bind_vars():
                             for m_key, m_val in default_sub_dict.items():
                                 if m_key not in current_sub_dict:
                                     current_sub_dict[m_key] = m_val
+                
+                # Handle backward compatibility for iCal URLs -> sources migration
+                if 'ical_urls' in bind_vars and 'ical_sources' not in bind_vars:
+                    old_urls = bind_vars.get('ical_urls', [])
+                    if old_urls:
+                        bind_vars['ical_sources'] = [
+                            {'url': url, 'color': '#007acc', 'name': f'Calendar {i+1}'} 
+                            for i, url in enumerate(old_urls)
+                        ]
+                    # Remove the old key
+                    del bind_vars['ical_urls']
+                elif 'ical_sources' not in bind_vars:
+                    bind_vars['ical_sources'] = []
         except json.JSONDecodeError:
             print(f"Warning: Could not decode JSON from {config_json}. Using defaults (already initialized).")
             # bind_vars ya está poblado con DEFAULTS, no se necesita acción adicional aquí.

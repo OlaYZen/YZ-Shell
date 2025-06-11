@@ -75,3 +75,76 @@
 #next-month-button:active #month-button-label {
   color: var(--shadow);
 }
+
+#event-dot {
+  font-size: 6pt;
+  min-height: 6px;
+  min-width: 6px;
+  margin: 1px;
+  /* color removed - will be set dynamically per source */
+}
+
+/* Individual event dot colors (will be overridden by dynamic CSS) */
+#event-dot-0,
+#event-dot-1, 
+#event-dot-2 {
+  font-size: 5pt;
+  min-height: 5px;
+  min-width: 5px;
+  margin: 0px 1px;
+  /* color will be set dynamically per source */
+}
+
+#month-refresh-button {
+  background: transparent;
+  border: none;
+  padding: 0;
+}
+
+#month-refresh-button:hover {
+  background-color: var(--surface-bright);
+  border-radius: 8px;
+}
+
+#month-refresh-button:active {
+  background-color: var(--primary);
+}
+
+#month-refresh-button:active #month-label {
+  color: var(--shadow);
+}
+
+/* Day button styles for calendar */
+#day-button {
+  background: none;
+  border: none;
+  border-radius: 4px;
+  padding: 0;
+  transition: all 0.2s ease-in-out;
+}
+
+#day-button:hover {
+  background-color: var(--surface-bright);
+}
+
+#day-button:active {
+  background-color: var(--primary);
+}
+
+#day-button:active #day-label {
+  color: var(--surface);
+}
+
+#day-content {
+  padding: 2px;
+}
+
+/* Special style for days with events */
+#day-button.has-events:hover {
+  background-color: var(--primary);
+  opacity: 0.8;
+}
+
+#day-button.has-events:hover #day-label {
+  color: var(--surface);
+}

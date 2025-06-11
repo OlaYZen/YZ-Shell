@@ -95,6 +95,11 @@ if os.path.exists(CONFIG_FILE):
     BAR_METRICS_DISKS = config.get('bar_metrics_disks', ["/"])
     METRICS_VISIBLE = config.get('metrics_visible', {'cpu': True, 'ram': True, 'disk': True, 'gpu': True})
     METRICS_SMALL_VISIBLE = config.get('metrics_small_visible', {'cpu': True, 'ram': True, 'disk': True, 'gpu': True})
+    ICAL_SOURCES = config.get('ical_sources', [])
+    # Backward compatibility: convert old ical_urls to new format
+    old_urls = config.get('ical_urls', [])
+    if old_urls and not ICAL_SOURCES:
+        ICAL_SOURCES = [{'url': url, 'color': '#007acc', 'name': f'Calendar {i+1}'} for i, url in enumerate(old_urls)]
 else:
     WALLPAPERS_DIR = WALLPAPERS_DIR_DEFAULT
     BAR_POSITION = "Top"
@@ -133,3 +138,4 @@ else:
     BAR_METRICS_DISKS = ["/"]
     METRICS_VISIBLE = {'cpu': True, 'ram': True, 'disk': True, 'gpu': True}
     METRICS_SMALL_VISIBLE = {'cpu': True, 'ram': True, 'disk': True, 'gpu': True}
+    ICAL_SOURCES = []

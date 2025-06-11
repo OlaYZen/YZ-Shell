@@ -126,10 +126,11 @@
   background-color: rgba(34, 197, 94, 0.2);
 }
 
+
+
 #wifi-password-prompt {
-  /* Remove border - will be on wrapper */
+  /* Match calendar padding */
   padding: 4px;
-  min-width: 240px;
 }
 
 #password-header {
@@ -224,7 +225,15 @@
 }
 
 #password-connect-button {
-  background-color: var(--blue);
+  background-color: var(--primary);
+  color: var(--shadow);
+}
+
+#password-connect-button:hover label {
+  color: var(--primary);
+}
+
+#password-connect-button label {
   color: var(--shadow);
 }
 

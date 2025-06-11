@@ -11,6 +11,7 @@ from modules.bluetooth import BluetoothConnections
 from modules.buttons import Buttons
 from modules.calendar import Calendar
 from modules.controls import ControlSliders
+from modules.ical_applet import ICalEventsApplet
 from modules.metrics import Metrics
 from modules.network import NetworkConnections
 from modules.password_prompt import PasswordPrompt
@@ -59,7 +60,7 @@ class Widgets(Box):
 
         self.controls = ControlSliders()
 
-        self.calendar = Calendar()
+        self.calendar = Calendar(widgets=self)
 
         self.player = Player()
 
@@ -68,6 +69,8 @@ class Widgets(Box):
         self.notification_history = NotificationHistory()
 
         self.network_connections = NetworkConnections(widgets=self)
+        
+        self.ical_events_applet = ICalEventsApplet(widgets=self)
         
         self.password_prompt = PasswordPrompt(widgets=self)
 
@@ -101,6 +104,7 @@ class Widgets(Box):
                 self.notification_history,
                 self.network_connections,
                 self.bluetooth,
+                self.ical_events_applet,
             ]
         )
 
@@ -181,6 +185,19 @@ class Widgets(Box):
 
     def show_network_applet(self):
         self.notch.open_notch("network_applet")
+    
+    def show_ical_events(self, selected_date):
+        """Show iCal events for the selected date"""
+        self.ical_events_applet.show_events_for_date(selected_date)
+        self.applet_stack.set_visible_child(self.ical_events_applet)
+    
+    def is_ical_events_visible(self):
+        """Check if the iCal events applet is currently visible"""
+        return self.applet_stack.get_visible_child() == self.ical_events_applet
+    
+    def is_notifications_visible(self):
+        """Check if the notification history is currently visible"""
+        return self.applet_stack.get_visible_child() == self.notification_history
     
     def show_password_prompt(self, ssid, bssid, on_connect_callback):
         """Show the password prompt in the calendar area"""

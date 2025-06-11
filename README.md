@@ -66,6 +66,21 @@ This fork includes several enhancements and improvements over the original Ax-Sh
 - **Graceful Hardware Handling**: Proper UI states when no Bluetooth hardware is detected, with clear "No Bluetooth Hardware" messaging
 - **Robust Error Recovery**: Fallback mechanisms for hardware detection and connection handling
 
+### **📅 Interactive Calendar with iCal Events**
+- **Clickable Event Dates**: Calendar dates with iCal events are now clickable to display event details in the applet tray
+- **Visual Event Indicators**: Colored dots on calendar days indicate events, with different colors for different iCal sources
+- **Multi-Source Support**: Support for multiple iCal calendars with customizable colors and names per source
+- **Event Details Display**: Comprehensive event information including title, time, description, and source calendar
+- **Universal Navigation**: Empty days serve as navigation buttons to return to notifications from any applet
+- **GTK3 Compatible**: Full GTK3 widget implementation ensuring compatibility and consistent styling
+
+### **🔐 Enhanced WiFi Security Interface**
+- **In-Dashboard Password Prompt**: Seamless password entry for secured WiFi networks without leaving the main interface
+- **Consistent UI Design**: Password prompt matches calendar width and styling for visual consistency
+- **Show/Hide Password**: Toggle password visibility with intuitive eye icon button
+- **Smart Network Handling**: Automatic detection of saved networks with priority connection attempts
+- **Enhanced Visual Feedback**: Clear network status with security indicators and connection progress
+
 ## 📊 Complete Feature List
 
 ### **🚀 Application Management**

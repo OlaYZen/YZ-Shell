@@ -18,7 +18,7 @@ from fabric.widgets.scale import Scale
 from fabric.widgets.scrolledwindow import ScrolledWindow
 from fabric.widgets.stack import Stack
 from fabric.widgets.window import Window
-from gi.repository import GdkPixbuf, GLib, Gtk
+from gi.repository import Gdk, GdkPixbuf, GLib, Gtk
 from PIL import Image
 
 from .data import (APP_NAME, APP_NAME_CAP, NOTIF_POS_DEFAULT, NOTIF_POS_KEY,
@@ -555,6 +555,35 @@ class HyprConfGUI(Window):
         add_container.add(add_btn)
         vbox.add(add_container)
 
+        # iCal Sources section
+        ical_header = Label(markup="<b>Calendar iCal Sources</b>", h_align="start", style="margin-top: 20px;")
+        vbox.add(ical_header)
+        ical_description = Label(
+            markup="<small>Add iCal sources to display events as colored dots on calendar days</small>", 
+            h_align="start"
+        )
+        vbox.add(ical_description)
+        
+        self.ical_entries = Box(orientation="v", spacing=8, h_align="start")
+        
+        self._create_ical_edit_entry_func = lambda source: self._add_ical_source_widget(source)
+
+        # Handle both old ical_urls format and new ical_sources format
+        ical_sources = bind_vars.get('ical_sources', [])
+        old_urls = bind_vars.get('ical_urls', [])
+        if old_urls and not ical_sources:
+            # Convert old format to new format for display
+            ical_sources = [{'url': url, 'color': '#007acc', 'name': f'Calendar {i+1}'} for i, url in enumerate(old_urls)]
+        
+        for source in ical_sources: 
+            self._create_ical_edit_entry_func(source)
+        vbox.add(self.ical_entries)
+        
+        add_ical_container = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, halign=Gtk.Align.START, valign=Gtk.Align.CENTER)
+        add_ical_btn = Button(label="Add iCal Source", on_clicked=self._on_add_ical_source_clicked)
+        add_ical_container.add(add_ical_btn)
+        vbox.add(add_ical_container)
+
         return scrolled_window
 
     def _add_disk_entry_widget(self, path):
@@ -567,6 +596,53 @@ class HyprConfGUI(Window):
         bar.add(x_btn)
         self.disk_entries.add(bar)
         self.disk_entries.show_all()
+
+    def _add_ical_source_widget(self, source):
+        """Helper to add an iCal source entry row to the ical_entries Box."""
+        print(f"Settings: Adding iCal source widget for: {source}")
+        if isinstance(source, str):
+            # Handle old format for backward compatibility
+            source = {'url': source, 'color': '#007acc', 'name': 'Calendar'}
+        
+        bar = Box(orientation="h", spacing=10, h_align="start")
+        
+        # Name entry
+        name_entry = Entry(
+            text=source.get('name', 'Calendar'),
+            tooltip_text="Calendar name",
+            style="min-width: 100px;"
+        )
+        bar.add(name_entry)
+        
+        # URL entry
+        url_entry = Entry(
+            text=source.get('url', ''), 
+            h_expand=True, 
+            tooltip_text="Enter an iCal URL (e.g., https://calendar.google.com/calendar/ical/...)"
+        )
+        bar.add(url_entry)
+        
+        # Color picker button
+        color_button = Gtk.ColorButton()
+        color = Gdk.RGBA()
+        color.parse(source.get('color', '#007acc'))
+        color_button.set_rgba(color)
+        color_button.set_title("Choose calendar color")
+        color_button.set_tooltip_text("Choose the color for event dots from this calendar")
+        bar.add(color_button)
+        
+        # Remove button
+        x_btn = Button(label="X")
+        x_btn.connect("clicked", lambda _, current_bar_to_remove=bar: self.ical_entries.remove(current_bar_to_remove))
+        bar.add(x_btn)
+        
+        self.ical_entries.add(bar)
+        self.ical_entries.show_all()
+
+    def _on_add_ical_source_clicked(self, widget):
+        """Handle click on Add iCal Source button."""
+        print("Settings: Adding new iCal source")
+        self._add_ical_source_widget({'url': '', 'color': '#007acc', 'name': 'New Calendar'})
 
 
     def create_about_tab(self):
@@ -660,6 +736,31 @@ class HyprConfGUI(Window):
         current_bind_vars_snapshot['bar_metrics_disks'] = [
             child.get_children()[0].get_text() for child in self.disk_entries.get_children() if isinstance(child, Gtk.Box) and child.get_children() and isinstance(child.get_children()[0], Entry)
         ]
+        # Process iCal sources
+        ical_sources = []
+        for child in self.ical_entries.get_children():
+            if isinstance(child, Gtk.Box) and len(child.get_children()) >= 4:
+                children = child.get_children()
+                name_entry = children[0]
+                url_entry = children[1]
+                color_button = children[2]
+                
+                if isinstance(name_entry, Entry) and isinstance(url_entry, Entry) and isinstance(color_button, Gtk.ColorButton):
+                    url = url_entry.get_text().strip()
+                    if url:  # Only include sources with non-empty URLs
+                        name = name_entry.get_text().strip() or "Calendar"
+                        color_rgba = color_button.get_rgba()
+                        color_hex = f"#{int(color_rgba.red * 255):02x}{int(color_rgba.green * 255):02x}{int(color_rgba.blue * 255):02x}"
+                        ical_sources.append({
+                            'name': name,
+                            'url': url,
+                            'color': color_hex
+                        })
+        
+        current_bind_vars_snapshot['ical_sources'] = ical_sources
+        # Remove old ical_urls key to avoid confusion
+        if 'ical_urls' in current_bind_vars_snapshot:
+            del current_bind_vars_snapshot['ical_urls']
 
 
         selected_icon_path = self.selected_face_icon
@@ -871,6 +972,12 @@ class HyprConfGUI(Window):
             
             for p in DEFAULTS.get('bar_metrics_disks', ["/"]):
                 self._add_disk_edit_entry_func(p)
+
+            # Reset iCal sources
+            for child in list(self.ical_entries.get_children()): self.ical_entries.remove(child)
+            
+            for source in DEFAULTS.get('ical_sources', []):
+                self._add_ical_source_widget(source)
 
             self._update_panel_position_sensitivity()
 
