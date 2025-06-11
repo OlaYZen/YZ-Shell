@@ -587,6 +587,50 @@ All bar components can be individually toggled:
 
 ---
 
+<h2><sub><img src="https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/master/Emojis/Travel%20and%20places/Rocket.png" alt="Rocket" width="25" height="25" /></sub> Roadmap</h2>
+
+- [x] App Launcher
+- [x] Bluetooth Manager
+- [x] Calculator
+- [x] Calendar
+- [x] Clipboard Manager
+- [x] Color Picker
+- [x] Customizable UI
+- [x] Dashboard
+- [x] Dock
+- [x] Emoji Picker
+- [x] Enhanced Bluetooth Hardware Detection
+- [x] Enhanced Network Metrics (Standardized Units)
+- [x] Enhanced Time Display (Seconds Precision)
+- [x] Enhanced Weather Service (Met.no API)
+- [x] Extended Weather Dashboard (3-Day Forecast)
+- [x] iCal Support
+- [x] Interactive Date Display (Multi-Format)
+- [x] Kanban Board
+- [x] Network Manager
+- [x] Notifications
+- [x] OCR
+- [x] Pins
+- [x] Power Manager
+- [x] Power Menu
+- [x] Screen Recorder
+- [x] Screenshot
+- [x] Settings
+- [x] Smart WiFi Connection Management
+- [x] System Tray
+- [x] Terminal
+- [x] Tmux Session Manager
+- [x] Update checker
+- [x] Vertical Layout
+- [x] Wallpaper Selector
+- [x] Workspaces Overview
+- [ ] Multi-monitor support
+- [ ] Multimodal AI Assistant
+- [ ] OSD
+- [ ] OTP Manager
+
+---
+
 ## Support
 
 If you find Ax-Shell useful, please consider supporting the **original project creator**:
