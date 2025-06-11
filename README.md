@@ -610,6 +610,7 @@ All bar components can be individually toggled:
 - [x] Vertical Layout
 - [x] Wallpaper Selector
 - [x] Workspaces Overview
+- [ ] Live Notifications (Similar to OneUi 7)
 - [ ] Multi-monitor support
 - [ ] Multimodal AI Assistant
 - [ ] OSD
