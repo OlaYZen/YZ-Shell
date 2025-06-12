@@ -1,7 +1,6 @@
 {
-	"version": "0.0.14",
+	"version": "0.0.15",
 	"changelog": [
-    "<b>feat:</b> Added weekly calendar on vertical panel layout.",
-    "<b>tweak:</b> Wallpaper transition set to a fast fade. Feels snappier."
+    "<b>feat:</b> Added uninstall script."
 	]
 }
