@@ -164,13 +164,17 @@ class Bar(Window):
         self.on_language_switch()
         self.connection.connect("event::activelayout", self.on_language_switch)
 
-        # Track display mode: 'time', 'date_eu', 'date_us', 'date_iso'
-        self.display_mode = 'time'
-        self.previous_mode = 'time'  # Track previous mode for middle/right click toggles
-        
-        # Create a custom clickable datetime widget using Label and Button
-        self.datetime_label = Label(
-            name="date-time-label",
+        # Determine date-time format based on the new setting
+        if data.DATETIME_12H_FORMAT:
+            time_format_horizontal = "%I:%M %p"
+            time_format_vertical = "%I\n%M\n%p"
+        else:
+            time_format_horizontal = "%H:%M"
+            time_format_vertical = "%H\n%M"
+
+        self.date_time = DateTime(
+            name="date-time",
+            formatters=[time_format_horizontal] if not data.VERTICAL else [time_format_vertical],
             h_align="center" if not data.VERTICAL else "fill",
             v_align="center",
             h_expand=True,

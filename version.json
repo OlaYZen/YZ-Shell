@@ -1,6 +1,6 @@
 {
-	"version": "0.0.15",
+	"version": "0.0.16",
 	"changelog": [
-    "<b>feat:</b> Added uninstall script."
+    "<b>feat:</b> Added 12 hours format for time display. Check Appearance settings."
 	]
 }
