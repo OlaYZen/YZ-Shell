@@ -54,9 +54,18 @@ class Bar(Window):
             all_visible=True,
         )
 
+        # Initialize display mode and previous mode for datetime cycling
+        self.display_mode = "time"
+        self.previous_mode = "time"
+
+        # Initialize 12h format and seconds display from config
+        self.current_12h_setting = getattr(data, 'DATETIME_12H_FORMAT', False)
+        self.show_seconds = getattr(data, 'DATETIME_SHOW_SECONDS', True)
+
         self.anchor_var = ""
         self.margin_var = ""
 
+        # Determine anchor based on bar position and centering
         match data.BAR_POSITION:
             case "Top":
                 self.anchor_var = "left top right"
@@ -69,6 +78,7 @@ class Bar(Window):
             case _:
                 self.anchor_var = "left top right"
 
+        # Determine margin based on orientation and theme
         if data.VERTICAL:
             match data.BAR_THEME:
                 case "Edge":
@@ -83,7 +93,6 @@ class Bar(Window):
                     if data.BAR_POSITION == "Bottom":
                         self.margin_var = "-8px -4px -4px -4px"
                     else:
-
                         self.margin_var = "-4px -4px -8px -4px"
 
         self.set_anchor(self.anchor_var)
@@ -95,6 +104,7 @@ class Bar(Window):
         self.dock_instance = None
         self.integrated_dock_widget = None
 
+        # Workspaces buttons
         self.workspaces = Workspaces(
             name="workspaces",
             invert_scroll=True,
@@ -130,7 +140,9 @@ class Bar(Window):
                     h_align="center",
                     v_align="center",
                     id=i,
-                    label= CHINESE_NUMERALS[i-1] if data.BAR_WORKSPACE_USE_CHINESE_NUMERALS and 1 <= i <= len(CHINESE_NUMERALS) else str(i)
+                    label=CHINESE_NUMERALS[i - 1]
+                    if data.BAR_WORKSPACE_USE_CHINESE_NUMERALS and 1 <= i <= len(CHINESE_NUMERALS)
+                    else str(i),
                 )
                 for i in range(1, 11)
             ],
@@ -145,10 +157,7 @@ class Bar(Window):
             name="button-bar",
             tooltip_markup=tooltip_tools,
             on_clicked=lambda *_: self.tools_menu(),
-            child=Label(
-                name="button-bar-label",
-                markup=icons.toolbox
-            )
+            child=Label(name="button-bar-label", markup=icons.toolbox),
         )
 
         self.connection = get_hyprland_connection()
@@ -160,28 +169,13 @@ class Bar(Window):
         self.network = NetworkApplet()
 
         self.lang_label = Label(name="lang-label")
-        self.language = Button(name="language", h_align="center", v_align="center", child=self.lang_label)
+        self.language = Button(
+            name="language", h_align="center", v_align="center", child=self.lang_label
+        )
         self.on_language_switch()
         self.connection.connect("event::activelayout", self.on_language_switch)
 
-        # Determine date-time format based on the new setting
-        if data.DATETIME_12H_FORMAT:
-            time_format_horizontal = "%I:%M %p"
-            time_format_vertical = "%I\n%M\n%p"
-        else:
-            time_format_horizontal = "%H:%M"
-            time_format_vertical = "%H\n%M"
-
-        self.date_time = DateTime(
-            name="date-time",
-            formatters=[time_format_horizontal] if not data.VERTICAL else [time_format_vertical],
-            h_align="center" if not data.VERTICAL else "fill",
-            v_align="center",
-            h_expand=True,
-            v_expand=True,
-            style_classes=["vertical"] if data.VERTICAL else [],
-        )
-        
+        self.datetime_label = Label(name="datetime-label")
         self.date_time = Button(
             name="date-time",
             child=self.datetime_label,
@@ -190,22 +184,17 @@ class Bar(Window):
             h_expand=True,
             v_expand=True,
         )
-        
-        # Connect button press event to handle different mouse buttons
         self.date_time.connect("button-press-event", self.on_datetime_button_press)
-        
+
         # Start the update timer
         self.update_datetime_display()
         GLib.timeout_add_seconds(1, self.update_datetime_display)
 
         self.button_apps = Button(
             name="button-bar",
-            tooltip_markup = tooltip_apps,
+            tooltip_markup=tooltip_apps,
             on_clicked=lambda *_: self.search_apps(),
-            child=Label(
-                name="button-bar-label",
-                markup=icons.apps
-            )
+            child=Label(name="button-bar-label", markup=icons.apps),
         )
         self.button_apps.connect("enter_notify_event", self.on_button_enter)
         self.button_apps.connect("leave_notify_event", self.on_button_leave)
@@ -214,10 +203,7 @@ class Bar(Window):
             name="button-bar",
             tooltip_markup=tooltip_power,
             on_clicked=lambda *_: self.power_menu(),
-            child=Label(
-                name="button-bar-label",
-                markup=icons.shutdown
-            )
+            child=Label(name="button-bar-label", markup=icons.shutdown),
         )
         self.button_power.connect("enter_notify_event", self.on_button_enter)
         self.button_power.connect("leave_notify_event", self.on_button_leave)
@@ -226,10 +212,7 @@ class Bar(Window):
             name="button-bar",
             tooltip_markup=tooltip_overview,
             on_clicked=lambda *_: self.overview(),
-            child=Label(
-                name="button-bar-label",
-                markup=icons.windows
-            )
+            child=Label(name="button-bar-label", markup=icons.windows),
         )
         self.button_overview.connect("enter_notify_event", self.on_button_enter)
         self.button_overview.connect("leave_notify_event", self.on_button_leave)
@@ -237,13 +220,10 @@ class Bar(Window):
         self.control = ControlSmall()
         self.metrics = MetricsSmall()
         self.battery = Battery()
-        
+
         self.apply_component_props()
-        
-        self.rev_right = [
-            self.metrics,
-            self.control,
-        ]
+
+        self.rev_right = [self.metrics, self.control]
 
         self.revealer_right = Revealer(
             name="bar-revealer",
@@ -256,18 +236,13 @@ class Bar(Window):
                 children=self.rev_right if not data.VERTICAL else None,
             ),
         )
-        
+
         self.boxed_revealer_right = Box(
             name="boxed-revealer",
-            children=[
-                self.revealer_right,
-            ],
+            children=[self.revealer_right],
         )
-        
-        self.rev_left = [
-            self.weather,
-            self.network,
-        ]
+
+        self.rev_left = [self.weather, self.network]
 
         self.revealer_left = Revealer(
             name="bar-revealer",
@@ -283,18 +258,16 @@ class Bar(Window):
 
         self.boxed_revealer_left = Box(
             name="boxed-revealer",
-            children=[
-                self.revealer_left,
-            ],
+            children=[self.revealer_left],
         )
-        
+
         self.h_start_children = [
             self.button_apps,
             self.ws_container,
             self.button_overview,
             self.boxed_revealer_left,
         ]
-        
+
         self.h_end_children = [
             self.boxed_revealer_right,
             self.battery,
@@ -304,7 +277,7 @@ class Bar(Window):
             self.date_time,
             self.button_power,
         ]
-        
+
         self.v_start_children = [
             self.button_apps,
             self.systray,
@@ -312,13 +285,13 @@ class Bar(Window):
             self.network,
             self.button_tools,
         ]
-        
+
         self.v_center_children = [
             self.button_overview,
             self.ws_container,
             self.weather,
         ]
-        
+
         self.v_end_children = [
             self.battery,
             self.metrics,
@@ -326,47 +299,61 @@ class Bar(Window):
             self.date_time,
             self.button_power,
         ]
-        
+
         self.v_all_children = []
         self.v_all_children.extend(self.v_start_children)
         self.v_all_children.extend(self.v_center_children)
         self.v_all_children.extend(self.v_end_children)
 
-        if data.DOCK_ENABLED and data.BAR_POSITION == "Bottom" or data.PANEL_THEME == "Panel" and data.BAR_POSITION in ["Top", "Bottom"]:
-            if not data.VERTICAL: 
+        if (
+            data.DOCK_ENABLED
+            and data.BAR_POSITION == "Bottom"
+            or data.PANEL_THEME == "Panel"
+            and data.BAR_POSITION in ["Top", "Bottom"]
+        ):
+            if not data.VERTICAL:
                 self.dock_instance = Dock(integrated_mode=True)
                 self.integrated_dock_widget = self.dock_instance.wrapper
 
-        
-        is_centered_bar = data.VERTICAL and getattr(data, 'CENTERED_BAR', False)
-        
+        is_centered_bar = data.VERTICAL and getattr(data, "CENTERED_BAR", False)
+
         bar_center_actual_children = None
-        
+
         if self.integrated_dock_widget is not None:
             bar_center_actual_children = self.integrated_dock_widget
         elif data.VERTICAL:
             bar_center_actual_children = Box(
-                orientation=Gtk.Orientation.VERTICAL, 
-                spacing=4, 
-                children=self.v_all_children if is_centered_bar else self.v_center_children
+                orientation=Gtk.Orientation.VERTICAL,
+                spacing=4,
+                children=self.v_all_children if is_centered_bar else self.v_center_children,
             )
 
         self.bar_inner = CenterBox(
             name="bar-inner",
-            orientation=Gtk.Orientation.HORIZONTAL if not data.VERTICAL else Gtk.Orientation.VERTICAL,
+            orientation=Gtk.Orientation.HORIZONTAL
+            if not data.VERTICAL
+            else Gtk.Orientation.VERTICAL,
             h_align="fill",
             v_align="fill",
-            start_children=None if is_centered_bar else Box(
+            start_children=None
+            if is_centered_bar
+            else Box(
                 name="start-container",
                 spacing=4,
-                orientation=Gtk.Orientation.HORIZONTAL if not data.VERTICAL else Gtk.Orientation.VERTICAL,
+                orientation=Gtk.Orientation.HORIZONTAL
+                if not data.VERTICAL
+                else Gtk.Orientation.VERTICAL,
                 children=self.h_start_children if not data.VERTICAL else self.v_start_children,
             ),
             center_children=bar_center_actual_children,
-            end_children=None if is_centered_bar else Box(
+            end_children=None
+            if is_centered_bar
+            else Box(
                 name="end-container",
                 spacing=4,
-                orientation=Gtk.Orientation.HORIZONTAL if not data.VERTICAL else Gtk.Orientation.VERTICAL,
+                orientation=Gtk.Orientation.HORIZONTAL
+                if not data.VERTICAL
+                else Gtk.Orientation.VERTICAL,
                 children=self.h_end_children if not data.VERTICAL else self.v_end_children,
             ),
         )
@@ -397,7 +384,7 @@ class Bar(Window):
         theme_classes = ["pills", "dense", "edge", "edgecenter"]
         for tc in theme_classes:
             self.bar_inner.remove_style_class(tc)
-        
+
         self.style = None
         match current_theme:
             case "Pills":
@@ -413,8 +400,10 @@ class Bar(Window):
                 self.style = "pills"
 
         self.bar_inner.add_style_class(self.style)
-        
-        if self.integrated_dock_widget and hasattr(self.integrated_dock_widget, 'add_style_class'):
+
+        if self.integrated_dock_widget and hasattr(
+            self.integrated_dock_widget, "add_style_class"
+        ):
 
             for theme_class_to_remove in ["pills", "dense", "edge"]:
                 style_context = self.integrated_dock_widget.get_style_context()
@@ -424,7 +413,7 @@ class Bar(Window):
 
         if data.BAR_THEME == "Dense" or data.BAR_THEME == "Edge":
             for child in self.themed_children:
-                if hasattr(child, 'add_style_class'):
+                if hasattr(child, "add_style_class"):
                     child.add_style_class("invert")
 
         match data.BAR_POSITION:
@@ -445,69 +434,73 @@ class Bar(Window):
         self.systray._update_visibility()
         self.chinese_numbers()
 
+    def on_seconds_display_changed(self, show_seconds: bool):
+        self.show_seconds = show_seconds
+        self.update_datetime_display()
+
     def apply_component_props(self):
         components = {
-            'button_apps': self.button_apps,
-            'systray': self.systray,
-            'control': self.control,
-            'network': self.network,
-            'button_tools': self.button_tools,
-            'button_overview': self.button_overview,
-            'ws_container': self.ws_container,
-            'weather': self.weather,
-            'battery': self.battery,
-            'metrics': self.metrics,
-            'language': self.language,
-            'date_time': self.date_time,
-            'button_power': self.button_power,
+            "button_apps": self.button_apps,
+            "systray": self.systray,
+            "control": self.control,
+            "network": self.network,
+            "button_tools": self.button_tools,
+            "button_overview": self.button_overview,
+            "ws_container": self.ws_container,
+            "weather": self.weather,
+            "battery": self.battery,
+            "metrics": self.metrics,
+            "language": self.language,
+            "date_time": self.date_time,
+            "button_power": self.button_power,
         }
-        
+
         for component_name, widget in components.items():
             if component_name in self.component_visibility:
                 widget.set_visible(self.component_visibility[component_name])
-    
+
     def toggle_component_visibility(self, component_name):
         components = {
-            'button_apps': self.button_apps,
-            'systray': self.systray,
-            'control': self.control,
-            'network': self.network,
-            'button_tools': self.button_tools,
-            'button_overview': self.button_overview,
-            'ws_container': self.ws_container,
-            'weather': self.weather,
-            'battery': self.battery,
-            'metrics': self.metrics,
-            'language': self.language,
-            'date_time': self.date_time,
-            'button_power': self.button_power,
+            "button_apps": self.button_apps,
+            "systray": self.systray,
+            "control": self.control,
+            "network": self.network,
+            "button_tools": self.button_tools,
+            "button_overview": self.button_overview,
+            "ws_container": self.ws_container,
+            "weather": self.weather,
+            "battery": self.battery,
+            "metrics": self.metrics,
+            "language": self.language,
+            "date_time": self.date_time,
+            "button_power": self.button_power,
         }
-        
+
         if component_name in components and component_name in self.component_visibility:
             self.component_visibility[component_name] = not self.component_visibility[component_name]
             components[component_name].set_visible(self.component_visibility[component_name])
-            
+
             config_file = os.path.expanduser(f"~/.config/{data.APP_NAME}/config/config.json")
             if os.path.exists(config_file):
                 try:
-                    with open(config_file, 'r') as f:
+                    with open(config_file, "r") as f:
                         config = json.load(f)
-                    
-                    config[f'bar_{component_name}_visible'] = self.component_visibility[component_name]
-                    
-                    with open(config_file, 'w') as f:
+
+                    config[f"bar_{component_name}_visible"] = self.component_visibility[component_name]
+
+                    with open(config_file, "w") as f:
                         json.dump(config, f, indent=4)
                 except Exception as e:
                     print(f"Error updating config file: {e}")
-            
+
             return self.component_visibility[component_name]
-        
+
         return None
 
     def on_button_enter(self, widget, event):
         window = widget.get_window()
         if window:
-            window.set_cursor(Gdk.Cursor.new_from_name(widget.get_display(),"hand2"))
+            window.set_cursor(Gdk.Cursor.new_from_name(widget.get_display(), "hand2"))
 
     def on_button_leave(self, widget, event):
         window = widget.get_window()
@@ -518,89 +511,110 @@ class Bar(Window):
         exec_shell_command_async("notify-send 'Botón presionado' '¡Funciona!'")
 
     def search_apps(self):
-        if self.notch: self.notch.open_notch("launcher")
+        if self.notch:
+            self.notch.open_notch("launcher")
 
     def overview(self):
-        if self.notch: self.notch.open_notch("overview")
+        if self.notch:
+            self.notch.open_notch("overview")
 
     def power_menu(self):
-        if self.notch: self.notch.open_notch("power")
+        if self.notch:
+            self.notch.open_notch("power")
 
     def tools_menu(self):
-        if self.notch: self.notch.open_notch("tools")
+        if self.notch:
+            self.notch.open_notch("tools")
 
-    def on_language_switch(self, _=None, event: HyprlandEvent=None):
-        lang_data = event.data[1] if event and event.data and len(event.data) > 1 else Language().get_label()
+    def on_language_switch(self, _=None, event: HyprlandEvent = None):
+        lang_data = (
+            event.data[1]
+            if event and event.data and len(event.data) > 1
+            else Language().get_label()
+        )
         self.language.set_tooltip_text(lang_data)
         if not data.VERTICAL:
             self.lang_label.set_label(lang_data[:3].upper())
         else:
             self.lang_label.add_style_class("icon")
             self.lang_label.set_markup(icons.keyboard)
-    
+
     def on_datetime_button_press(self, widget, event):
         """Handle different mouse button clicks on datetime widget"""
         if event.button == 1:  # Left click
             # Cycle through: time -> EU date -> time
-            if self.display_mode == 'time':
-                self.previous_mode = 'time'
-                self.display_mode = 'date_eu'
+            if self.display_mode == "time":
+                self.previous_mode = "time"
+                self.display_mode = "date_eu"
             else:
                 self.previous_mode = self.display_mode
-                self.display_mode = 'time'
+                self.display_mode = "time"
         elif event.button == 2:  # Middle click
             # Toggle between current mode and ISO date format
-            if self.display_mode == 'date_iso':
+            if self.display_mode == "date_iso":
                 self.display_mode = self.previous_mode
             else:
                 self.previous_mode = self.display_mode
-                self.display_mode = 'date_iso'
+                self.display_mode = "date_iso"
         elif event.button == 3:  # Right click
             # Toggle between current mode and American date format
-            if self.display_mode == 'date_us':
+            if self.display_mode == "date_us":
                 self.display_mode = self.previous_mode
             else:
                 self.previous_mode = self.display_mode
-                self.display_mode = 'date_us'
-        
+                self.display_mode = "date_us"
+
         # Update display immediately
         self.update_datetime_display()
         return True
-    
+
     def update_datetime_display(self):
-        """Update the datetime display based on current mode"""
         from datetime import datetime
-        
+        import config.data as data  # import here to ensure data is defined
+
         now = datetime.now()
-        
-        if self.display_mode == 'time':
-            # Show time
-            if not data.VERTICAL:
-                text = now.strftime("%H:%M:%S")
+
+        # Use cached settings or fallback to defaults
+        use_12h = getattr(self, "current_12h_setting", data.DATETIME_12H_FORMAT)
+        show_seconds = getattr(self, "show_seconds", True)
+
+        try:
+            import config.data as data
+            show_seconds = getattr(data, 'DATETIME_SHOW_SECONDS', True)
+            use_12h = getattr(data, 'DATETIME_12H_FORMAT', False)
+        except Exception:
+            # fallback defaults
+            show_seconds = True
+            use_12h = False
+
+        # Determine time format strings based on settings and orientation
+        if use_12h:
+            if show_seconds:
+                time_format = "%I:%M:%S %p" if not data.VERTICAL else "%I\n%M\n%S\n%p"
             else:
-                text = now.strftime("%H\n%M")
-        elif self.display_mode == 'date_eu':
-            # European date format: DD/MM/YYYY
-            if not data.VERTICAL:
-                text = now.strftime("%d/%m/%Y")
+                time_format = "%I:%M %p" if not data.VERTICAL else "%I\n%M\n%p"
+        else:
+            if show_seconds:
+                time_format = "%H:%M:%S" if not data.VERTICAL else "%H\n%M\n%S"
             else:
-                text = now.strftime("%d\n%m\n%Y")
-        elif self.display_mode == 'date_us':
-            # American date format: MM-DD-YYYY
-            if not data.VERTICAL:
-                text = now.strftime("%m-%d-%Y")
-            else:
-                text = now.strftime("%m\n%d\n%Y")
-        elif self.display_mode == 'date_iso':
-            # ISO date format: YYYY.MM.DD
-            if not data.VERTICAL:
-                text = now.strftime("%Y.%m.%d")
-            else:
-                text = now.strftime("%Y\n%m\n%d")
-        
+                time_format = "%H:%M" if not data.VERTICAL else "%H\n%M"
+
+        # Format the display text based on current display mode
+        if self.display_mode == "time":
+            text = now.strftime(time_format)
+        elif self.display_mode == "date_eu":
+            text = now.strftime("%d/%m/%Y" if not data.VERTICAL else "%d\n%m\n%Y")
+        elif self.display_mode == "date_us":
+            text = now.strftime("%m-%d-%Y" if not data.VERTICAL else "%m\n%d\n%Y")
+        elif self.display_mode == "date_iso":
+            text = now.strftime("%Y.%m.%d" if not data.VERTICAL else "%Y\n%m\n%d")
+        else:
+            # Fallback to time if unknown mode
+            text = now.strftime(time_format)
+
         self.datetime_label.set_text(text)
-        return True  # Return True to continue the timer
-            
+        return True  # Continue the GLib timeout
+
     def toggle_hidden(self):
         self.hidden = not self.hidden
         if self.hidden:
@@ -618,5 +632,5 @@ class Bar(Window):
         """Set the notch reference for widgets that need it"""
         self.notch = notch
         # Set notch reference for weather widget so it can open weather dashboard
-        if hasattr(self.weather, 'set_notch'):
+        if hasattr(self.weather, "set_notch"):
             self.weather.set_notch(notch)
