@@ -16,7 +16,7 @@ import config.data as data
 
 class ICalEventManager:
     def __init__(self):
-        self.event_dates: Dict[date, List[dict]] = {}  # date -> list of event info: {'title': str, 'color': str, 'source': str}
+        self.event_dates: Dict[date, List[dict]] = {}  # date -> list of event info: {'title': str, 'color': str, 'source': str, 'description': str}
         self.last_update = None
         self.update_in_progress = False
         self.listeners = []  # List of callbacks to notify when events are updated
@@ -121,137 +121,88 @@ class ICalEventManager:
         """Fetch and parse iCal events in background thread."""
         try:
             new_event_dates = {}
-            
+
             # Calculate date range once for all sources (2 years in the past and 2 years in the future)
             now = datetime.now()
             start_date = now.date() - timedelta(days=730)  # 2 years ago
             end_date = now.date() + timedelta(days=730)    # 2 years from now
             print(f"iCal: Using date range {start_date} to {end_date} for all sources")
-            
+
+            def to_iso(dt):
+                if isinstance(dt, datetime):
+                    return dt.isoformat()
+                elif isinstance(dt, date):
+                    return dt.isoformat()
+                return None
+
             for source in ical_sources:
                 url = source.get('url', '').strip()
                 color = source.get('color', '#007acc')
                 source_name = source.get('name', 'Unknown Calendar')
-                
+
                 if not url:
                     continue
-                    
+
                 try:
                     print(f"iCal: Fetching from {source_name}: {url}")
                     response = requests.get(url, timeout=10)
                     response.raise_for_status()
                     print(f"iCal: Successfully fetched {len(response.content)} bytes from {source_name}")
-                    
+
                     cal = Calendar.from_ical(response.content)
                     print(f"iCal: Processing events from {source_name} between {start_date} and {end_date}")
-                    
+
                     events_found = 0
                     for component in cal.walk():
                         if component.name == "VEVENT":
                             event = Event(component)
-                            
-                            # Get event start date
+
                             dtstart = event.get('dtstart')
                             if dtstart is None:
                                 continue
-                                
                             event_start = dtstart.dt
+
+                            dtend = event.get('dtend')
+                            event_end = dtend.dt if dtend else None
+
                             summary = str(event.get('summary', 'Untitled Event'))
-                            
-                            # Handle timezone-aware datetime and date objects
+                            description = str(event.get('description', ''))  # Fetch the description
+
+                            # Determine base event date for indexing
                             if isinstance(event_start, datetime):
                                 base_event_date = event_start.date()
                             else:
                                 base_event_date = event_start
-                            
-                            # Check if this is a recurring event
-                            rrule = event.get('rrule')
-                            if rrule:
-                                # Handle recurring events
-                                print(f"iCal: Processing recurring event '{summary}' with rule: {rrule}")
-                                try:
-                                    # Generate recurring instances within our date range
-                                    rule_str = rrule.to_ical().decode('utf-8')
-                                    
-                                    # Simple yearly recurrence handler for birthdays/anniversaries
-                                    if 'FREQ=YEARLY' in rule_str:
-                                        # Start from the year that would first fall in our range
-                                        start_year = max(base_event_date.year, start_date.year)
-                                        end_year = min(base_event_date.year + 50, end_date.year)  # Reasonable limit
-                                        
-                                        for year in range(start_year, end_year + 1):
-                                            try:
-                                                recurring_date = base_event_date.replace(year=year)
-                                                if start_date <= recurring_date <= end_date:
-                                                    print(f"iCal: Found recurring instance '{summary}' on {recurring_date} from {source_name}")
-                                                    
-                                                    if recurring_date not in new_event_dates:
-                                                        new_event_dates[recurring_date] = []
-                                                    new_event_dates[recurring_date].append({
-                                                        'title': summary,
-                                                        'color': color,
-                                                        'source': source_name
-                                                    })
-                                                    events_found += 1
-                                            except ValueError:
-                                                # Handle leap year issues (Feb 29)
-                                                continue
-                                    else:
-                                        # For other recurrence patterns, just add the base event if in range
-                                        if start_date <= base_event_date <= end_date:
-                                            print(f"iCal: Found complex recurring event '{summary}' on {base_event_date} from {source_name}")
-                                            
-                                            if base_event_date not in new_event_dates:
-                                                new_event_dates[base_event_date] = []
-                                            new_event_dates[base_event_date].append({
-                                                'title': summary,
-                                                'color': color,
-                                                'source': source_name
-                                            })
-                                            events_found += 1
-                                            
-                                except Exception as e:
-                                    print(f"iCal: Error processing recurrence for '{summary}': {e}")
-                                    # Fallback to base event
-                                    if start_date <= base_event_date <= end_date:
-                                        if base_event_date not in new_event_dates:
-                                            new_event_dates[base_event_date] = []
-                                        new_event_dates[base_event_date].append({
-                                            'title': summary,
-                                            'color': color,
-                                            'source': source_name
-                                        })
-                                        events_found += 1
-                            else:
-                                # Non-recurring event - only include if in our date range
-                                if start_date <= base_event_date <= end_date:
-                                    print(f"iCal: Found single event '{summary}' on {base_event_date} from {source_name}")
-                                    
-                                    if base_event_date not in new_event_dates:
-                                        new_event_dates[base_event_date] = []
-                                    new_event_dates[base_event_date].append({
-                                        'title': summary,
-                                        'color': color,
-                                        'source': source_name
-                                    })
-                                    events_found += 1
-                    
+
+                            # Non-recurring event
+                            if start_date <= base_event_date <= end_date:
+                                event_info = {
+                                    'title': summary,
+                                    'description': description,  # Add description here
+                                    'color': color,
+                                    'source': source_name,
+                                    'start': to_iso(event_start),
+                                    'end': to_iso(event_end),
+                                }
+                                if base_event_date not in new_event_dates:
+                                    new_event_dates[base_event_date] = []
+                                new_event_dates[base_event_date].append(event_info)
+                                events_found += 1
+
                     print(f"iCal: Found {events_found} events from {source_name}")
-                                
+
                 except requests.RequestException as e:
                     print(f"Error fetching iCal from {source_name}: {e}")
                 except Exception as e:
                     print(f"Error parsing iCal from {source_name}: {e}")
-            
-            # Update the event dates dictionary
+
             self.event_dates = new_event_dates
             self.last_update = datetime.now()
-            
+
             print(f"Updated calendar events: {len(self.event_dates)} days with events")
-            
-            # Notify listeners on the main thread
+
             GLib.idle_add(self._notify_listeners)
-            
+
         except Exception as e:
             print(f"Error in iCal update thread: {e}")
         finally:
@@ -259,4 +210,4 @@ class ICalEventManager:
 
 
 # Global instance
-ical_manager = ICalEventManager() 
+ical_manager = ICalEventManager()

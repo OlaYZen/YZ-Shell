@@ -36,6 +36,7 @@ PACKAGES=(
   python-requests
   python-setproctitle
   python-toml
+  python-tzlocal
   python-watchdog
   swappy
   swww-git

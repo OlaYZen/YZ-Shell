@@ -1,5 +1,5 @@
 import gi
-from datetime import date, datetime
+from datetime import date, datetime, timezone
 
 gi.require_version('Gtk', '3.0')
 from fabric.widgets.box import Box
@@ -8,9 +8,13 @@ from fabric.widgets.centerbox import CenterBox
 from fabric.widgets.label import Label
 from fabric.widgets.scrolledwindow import ScrolledWindow
 from gi.repository import Gtk
+from tzlocal import get_localzone
+from zoneinfo import ZoneInfo
 
 import modules.icons as icons
 from modules.ical_events import ical_manager
+
+local_tz = get_localzone()
 
 
 class ICalEventSlot(Box):
@@ -44,22 +48,9 @@ class ICalEventSlot(Box):
             h_align="start"
         )
         
-        # Event description (if available)
-        description = event_data.get('description', '')
-        if description:
-            # Limit description length
-            if len(description) > 100:
-                description = description[:97] + "..."
-            self.desc_label = Label(
-                name="ical-event-description",
-                label=description,
-                h_align="start",
-                wrap=True,
-                ellipsization="end",
-                max_width_chars=50
-            )
-        else:
-            self.desc_label = None
+        # Tooltip with full description
+        full_description = event_data.get('description', 'No description available')
+        self.set_tooltip_text(full_description)  # Set tooltip text to the description
         
         # Event source/calendar color indicator
         source_color = event_data.get('color', event_data.get('source_color', '#007acc'))
@@ -78,45 +69,61 @@ class ICalEventSlot(Box):
         # Add components to main box
         self.add(header_box)
         self.add(self.time_label)
-        if self.desc_label:
-            self.add(self.desc_label)
-    
-    def _format_event_time(self):
-        """Format the event time for display"""
-        # Check if the event has specific time information
+
+    def _format_event_time(self) -> str:
         start_time = self.event_data.get('start')
         end_time = self.event_data.get('end')
-        
-        # If no start time info, assume it's an all-day event
+
+        # Get event calendar timezone or fallback
+        event_tz = None
+        tzname = self.event_data.get('calendar_timezone') or self.event_data.get('X-WR-TIMEZONE')
+        if tzname:
+            try:
+                event_tz = ZoneInfo(tzname)
+            except Exception:
+                event_tz = local_tz
+        else:
+            event_tz = local_tz
+
         if not start_time:
             return "All day"
-        
+
         try:
             if isinstance(start_time, str):
-                # Parse ISO format datetime
-                start_dt = datetime.fromisoformat(start_time.replace('Z', '+00:00'))
+                start_dt = datetime.fromisoformat(start_time)
             else:
                 start_dt = start_time
-            
+
+            if start_dt.tzinfo is None:
+                start_dt = start_dt.replace(tzinfo=event_tz)
+            else:
+                start_dt = start_dt.astimezone(event_tz)
+
             if end_time:
                 if isinstance(end_time, str):
-                    end_dt = datetime.fromisoformat(end_time.replace('Z', '+00:00'))
+                    end_dt = datetime.fromisoformat(end_time)
                 else:
                     end_dt = end_time
-                
-                # Check if it's all day (dates without time)
-                if hasattr(start_dt, 'hour') and hasattr(end_dt, 'hour'):
-                    return f"{start_dt.strftime('%H:%M')} - {end_dt.strftime('%H:%M')}"
+
+                if end_dt.tzinfo is None:
+                    end_dt = end_dt.replace(tzinfo=event_tz)
                 else:
-                    return "All day"
+                    end_dt = end_dt.astimezone(event_tz)
+
+                # Convert to local timezone for display
+                start_dt_local = start_dt.astimezone(local_tz)
+                end_dt_local = end_dt.astimezone(local_tz)
+
+                if start_dt_local.date() == end_dt_local.date():
+                    return f"{start_dt_local.strftime('%H:%M')} - {end_dt_local.strftime('%H:%M')}"
+                else:
+                    return f"{start_dt_local.strftime('%b %d %H:%M')} - {end_dt_local.strftime('%b %d %H:%M')}"
             else:
-                if hasattr(start_dt, 'hour'):
-                    return start_dt.strftime('%H:%M')
-                else:
-                    return "All day"
+                start_dt_local = start_dt.astimezone(local_tz)
+                return start_dt_local.strftime('%H:%M')
+
         except Exception as e:
             print(f"Error formatting event time: {e}")
-            # Most calendar events (like birthdays) are all-day events
             return "All day"
 
 
@@ -184,39 +191,48 @@ class ICalEventsApplet(Box):
         self.no_events_label.set_visible(False)
     
     def show_events_for_date(self, selected_date: date):
-        """Display events for the specified date"""
+        """Display events for the specified date, sorted by start time ascending."""
         self.selected_date = selected_date
-        
-        # Update title
+
         date_str = selected_date.strftime("%B %d, %Y")
         self.date_label.set_label(f"Events - {date_str}")
-        
-        # Clear existing events
+
         self._clear_events_list()
-        
-        # Get events for this date
+
         events = ical_manager.get_events_on_date(selected_date)
-        
+
         print(f"iCal Applet: Found {len(events)} events for {selected_date}")
         for i, event in enumerate(events):
             print(f"iCal Applet: Event {i}: {event}")
-        
+
         if events:
             self.no_events_label.set_visible(False)
-            
-            # Sort events by title since they don't have start times in our structure
-            sorted_events = sorted(events, key=lambda e: e.get('title', ''))
-            
+
+            def get_start_time(event):
+                start = event.get('start')
+                if not start:
+                    return datetime.max.replace(tzinfo=local_tz)
+                try:
+                    dt = datetime.fromisoformat(start)
+                    if dt.tzinfo is None:
+                        dt = dt.replace(tzinfo=local_tz)
+                    else:
+                        dt = dt.astimezone(local_tz)
+                    return dt
+                except Exception:
+                    return datetime.max.replace(tzinfo=local_tz)
+
+            sorted_events = sorted(events, key=get_start_time)
+
             for event in sorted_events:
                 event_slot = ICalEventSlot(event)
                 self.events_list_box.add(event_slot)
         else:
             self.no_events_label.set_visible(True)
-        
-        # Show all widgets
+
         self.events_list_box.show_all()
     
     def _clear_events_list(self):
         """Clear all events from the list"""
         for child in self.events_list_box.get_children():
-            child.destroy() 
+            child.destroy()

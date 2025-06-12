@@ -500,33 +500,6 @@ uwsm -- app python ~/.config/YZ-Shell/main.py > /dev/null 2>&1 & disown
 
 ## 🛠️ Configuration
 
-### **Main Configuration** (`~/.config/YZ-Shell/config/config.json`)
-
-```json
-{
-  "wallpapers_dir": "/path/to/wallpapers",
-  "bar_position": "Top",
-  "centered_bar": false,
-  "terminal_command": "kitty -e",
-  "dock_enabled": true,
-  "dock_icon_size": 28,
-  "bar_theme": "Pills",
-  "dock_theme": "Pills", 
-  "panel_theme": "Notch",
-  "corners_visible": true,
-  "bar_components_visibility": {
-    "button_apps": true,
-    "systray": true,
-    "control": true,
-    "network": true,
-    "weather": true,
-    "battery": true,
-    "metrics": true,
-    "date_time": true
-  }
-}
-```
-
 ### **Component Visibility**
 All bar components can be individually toggled:
 - App launcher button
