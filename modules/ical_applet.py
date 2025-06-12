@@ -71,61 +71,64 @@ class ICalEventSlot(Box):
         self.add(self.time_label)
 
     def _format_event_time(self) -> str:
-        start_time = self.event_data.get('start')
-        end_time = self.event_data.get('end')
+        start_str = self.event_data.get('start')
+        end_str = self.event_data.get('end')
+        all_day = self.event_data.get('all_day', False)
 
-        # Get event calendar timezone or fallback
-        event_tz = None
-        tzname = self.event_data.get('calendar_timezone') or self.event_data.get('X-WR-TIMEZONE')
-        if tzname:
-            try:
-                event_tz = ZoneInfo(tzname)
-            except Exception:
-                event_tz = local_tz
-        else:
-            event_tz = local_tz
-
-        if not start_time:
+        if not start_str:
             return "All day"
 
         try:
-            if isinstance(start_time, str):
-                start_dt = datetime.fromisoformat(start_time)
-            else:
-                start_dt = start_time
-
-            if start_dt.tzinfo is None:
-                start_dt = start_dt.replace(tzinfo=event_tz)
-            else:
-                start_dt = start_dt.astimezone(event_tz)
-
-            if end_time:
-                if isinstance(end_time, str):
-                    end_dt = datetime.fromisoformat(end_time)
+            if all_day:
+                start_date = date.fromisoformat(start_str)
+                if end_str:
+                    end_date = date.fromisoformat(end_str)
+                    # end_date is already adjusted in parsing, so display inclusive range
+                    if start_date == end_date:
+                        return start_date.strftime("%b %d, %Y")
+                    else:
+                        return f"{start_date.strftime('%b %d, %Y')} - {end_date.strftime('%b %d, %Y')}"
                 else:
-                    end_dt = end_time
-
-                if end_dt.tzinfo is None:
-                    end_dt = end_dt.replace(tzinfo=event_tz)
-                else:
-                    end_dt = end_dt.astimezone(event_tz)
-
-                # Convert to local timezone for display
-                start_dt_local = start_dt.astimezone(local_tz)
-                end_dt_local = end_dt.astimezone(local_tz)
-
-                if start_dt_local.date() == end_dt_local.date():
-                    return f"{start_dt_local.strftime('%H:%M')} - {end_dt_local.strftime('%H:%M')}"
-                else:
-                    return f"{start_dt_local.strftime('%b %d %H:%M')} - {end_dt_local.strftime('%b %d %H:%M')}"
+                    return start_date.strftime("%b %d, %Y")
             else:
-                start_dt_local = start_dt.astimezone(local_tz)
-                return start_dt_local.strftime('%H:%M')
+                # Timed event formatting (same as before)
+                start_dt = datetime.fromisoformat(start_str)
+                event_tz = None
+                tzname = self.event_data.get('calendar_timezone') or self.event_data.get('X-WR-TIMEZONE')
+                if tzname:
+                    try:
+                        event_tz = ZoneInfo(tzname)
+                    except Exception:
+                        event_tz = local_tz
+                else:
+                    event_tz = local_tz
+
+                if start_dt.tzinfo is None:
+                    start_dt = start_dt.replace(tzinfo=event_tz)
+                else:
+                    start_dt = start_dt.astimezone(event_tz)
+
+                if end_str:
+                    end_dt = datetime.fromisoformat(end_str)
+                    if end_dt.tzinfo is None:
+                        end_dt = end_dt.replace(tzinfo=event_tz)
+                    else:
+                        end_dt = end_dt.astimezone(event_tz)
+
+                    start_dt_local = start_dt.astimezone(local_tz)
+                    end_dt_local = end_dt.astimezone(local_tz)
+
+                    if start_dt_local.date() == end_dt_local.date():
+                        return f"{start_dt_local.strftime('%H:%M')} - {end_dt_local.strftime('%H:%M')}"
+                    else:
+                        return f"{start_dt_local.strftime('%b %d %H:%M')} - {end_dt_local.strftime('%b %d %H:%M')}"
+                else:
+                    start_dt_local = start_dt.astimezone(local_tz)
+                    return start_dt_local.strftime('%H:%M')
 
         except Exception as e:
             print(f"Error formatting event time: {e}")
             return "All day"
-
 
 class ICalEventsApplet(Box):
     """Applet to display iCal events for a selected date"""

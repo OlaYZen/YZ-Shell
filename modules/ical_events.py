@@ -1,8 +1,9 @@
 import requests
 import threading
-from datetime import datetime, date, timedelta
+from datetime import datetime, date, timedelta, time
 from typing import Dict, List, Set
 from gi.repository import GLib
+from dateutil.rrule import rrulestr
 
 try:
     from icalendar import Calendar, Event
@@ -117,12 +118,10 @@ class ICalEventManager:
         thread.daemon = True
         thread.start()
     
-    def _fetch_events_thread(self, ical_sources: List[dict]):
-        """Fetch and parse iCal events in background thread."""
+    def _fetch_events_thread(self, ical_sources: list):
         try:
             new_event_dates = {}
 
-            # Calculate date range once for all sources (2 years in the past and 2 years in the future)
             now = datetime.now()
             start_date = now.date() - timedelta(days=730)  # 2 years ago
             end_date = now.date() + timedelta(days=730)    # 2 years from now
@@ -153,41 +152,129 @@ class ICalEventManager:
                     print(f"iCal: Processing events from {source_name} between {start_date} and {end_date}")
 
                     events_found = 0
+
                     for component in cal.walk():
-                        if component.name == "VEVENT":
-                            event = Event(component)
+                        if component.name != "VEVENT":
+                            continue
 
-                            dtstart = event.get('dtstart')
-                            if dtstart is None:
-                                continue
-                            event_start = dtstart.dt
+                        event = Event(component)
 
-                            dtend = event.get('dtend')
-                            event_end = dtend.dt if dtend else None
+                        dtstart_prop = event.get('dtstart')
+                        if dtstart_prop is None:
+                            continue
+                        event_start = dtstart_prop.dt
 
-                            summary = str(event.get('summary', 'Untitled Event'))
-                            description = str(event.get('description', ''))  # Fetch the description
+                        dtend_prop = event.get('dtend')
+                        event_end = dtend_prop.dt if dtend_prop else None
 
-                            # Determine base event date for indexing
-                            if isinstance(event_start, datetime):
-                                base_event_date = event_start.date()
+                        # Detect all-day event (date only, no time)
+                        all_day = isinstance(event_start, date) and not isinstance(event_start, datetime)
+
+                        # Adjust end date for all-day events (DTEND is exclusive)
+                        if all_day and event_end is not None:
+                            event_end = event_end - timedelta(days=1)
+
+                        summary = str(event.get('summary', 'Untitled Event'))
+                        description = str(event.get('description', ''))
+
+                        rrule_prop = component.get('rrule')
+
+                        # Calculate event duration for recurring events
+                        if event_end and not all_day:
+                            duration = event_end - event_start
+                        elif event_end and all_day:
+                            # For all-day events, duration in days + 1
+                            duration = (event_end - event_start) + timedelta(days=1)
+                        else:
+                            duration = None
+
+                        def add_event_occurrence(occ_start):
+                            # For all-day events, occ_start is date, else datetime
+                            if all_day:
+                                occ_end = occ_start + (duration - timedelta(days=1)) if duration else occ_start
                             else:
-                                base_event_date = event_start
+                                occ_end = occ_start + duration if duration else None
 
-                            # Non-recurring event
-                            if start_date <= base_event_date <= end_date:
-                                event_info = {
-                                    'title': summary,
-                                    'description': description,  # Add description here
-                                    'color': color,
-                                    'source': source_name,
-                                    'start': to_iso(event_start),
-                                    'end': to_iso(event_end),
-                                }
-                                if base_event_date not in new_event_dates:
-                                    new_event_dates[base_event_date] = []
-                                new_event_dates[base_event_date].append(event_info)
-                                events_found += 1
+                            event_info = {
+                                'title': summary,
+                                'description': description,
+                                'color': color,
+                                'source': source_name,
+                                'start': to_iso(occ_start),
+                                'end': to_iso(occ_end),
+                                'all_day': all_day,
+                            }
+
+                            # Add event_info to all days spanned by event occurrence
+                            if all_day:
+                                current_day = occ_start
+                                last_day = occ_end
+                            else:
+                                current_day = occ_start.date()
+                                last_day = occ_end.date() if occ_end else current_day
+
+                            while current_day <= last_day:
+                                if start_date <= current_day <= end_date:
+                                    if current_day not in new_event_dates:
+                                        new_event_dates[current_day] = []
+                                    new_event_dates[current_day].append(event_info)
+                                current_day += timedelta(days=1)
+
+                        if rrule_prop:
+                            # Recurring event: expand occurrences within date range
+                            # Build RRULE string with DTSTART
+                            dtstart_for_rrule = event_start
+                            if all_day and isinstance(dtstart_for_rrule, date) and not isinstance(dtstart_for_rrule, datetime):
+                                # Convert date to datetime at midnight for rrule
+                                dtstart_for_rrule = datetime.combine(dtstart_for_rrule, time.min)
+
+                            rrule_str_raw = component.get('rrule').to_ical().decode()
+                            rrule_text = f"DTSTART:{dtstart_for_rrule.strftime('%Y%m%dT%H%M%S')}\nRRULE:{rrule_str_raw}"
+
+                            try:
+                                rule = rrulestr(rrule_text, forceset=True, compatible=True)
+                                occurrences = rule.between(
+                                    datetime.combine(start_date, time.min),
+                                    datetime.combine(end_date, time.max),
+                                    inc=True
+                                )
+                                for occ in occurrences:
+                                    if all_day:
+                                        occ_date = occ.date()
+                                        add_event_occurrence(occ_date)
+                                    else:
+                                        add_event_occurrence(occ)
+                                events_found += len(occurrences)
+                            except Exception as e:
+                                print(f"Error expanding RRULE for event '{summary}' in {source_name}: {e}")
+                        else:
+                            # Non-recurring event: add single occurrence if in range
+                            if all_day:
+                                event_start_date = event_start
+                                event_end_date = event_end if event_end else event_start_date
+                                # Add event for all days spanned
+                                current_day = event_start_date
+                                while current_day <= event_end_date:
+                                    if start_date <= current_day <= end_date:
+                                        if current_day not in new_event_dates:
+                                            new_event_dates[current_day] = []
+                                        event_info = {
+                                            'title': summary,
+                                            'description': description,
+                                            'color': color,
+                                            'source': source_name,
+                                            'start': to_iso(event_start),
+                                            'end': to_iso(event_end),
+                                            'all_day': all_day,
+                                        }
+                                        new_event_dates[current_day].append(event_info)
+                                        events_found += 1
+                                    current_day += timedelta(days=1)
+                            else:
+                                event_start_date = event_start.date()
+                                if start_date <= event_start_date <= end_date:
+                                    add_event_occurrence(event_start)
+                                    events_found += 1
 
                     print(f"iCal: Found {events_found} events from {source_name}")
 
@@ -201,6 +288,7 @@ class ICalEventManager:
 
             print(f"Updated calendar events: {len(self.event_dates)} days with events")
 
+            from gi.repository import GLib
             GLib.idle_add(self._notify_listeners)
 
         except Exception as e:

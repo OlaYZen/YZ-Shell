@@ -1,8 +1,3 @@
-#ical-events-applet {
-  /* Remove border - will be on wrapper */
-  padding: 4px;
-}
-
 #ical-header {
   border: 2px solid var(--surface);
   padding: 4px;
@@ -35,10 +30,6 @@
 
 #ical-back:active #ical-back-label {
   color: var(--shadow);
-}
-
-#ical-events-scrolled-window {
-  /* Height will be controlled by the scrolled window's natural sizing */
 }
 
 #ical-event-slot {
@@ -76,5 +67,3 @@
   font-style: italic;
   padding: 20px;
 }
-
- 

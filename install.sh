@@ -25,6 +25,7 @@ PACKAGES=(
   noto-fonts-emoji
   nvtop
   playerctl
+  python-dateutil
   python-fabric-git
   python-gobject
   python-icalendar
