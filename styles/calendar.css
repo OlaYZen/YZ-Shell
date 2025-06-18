@@ -46,7 +46,7 @@
 #day-label.current-day {
   background-color: var(--foreground);
   color: var(--shadow);
-  border-radius: 20px;
+  border-radius: 2px;
 }
 
 #prev-month-button,

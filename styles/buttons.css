@@ -2,7 +2,8 @@
 #network-button,
 #bluetooth-button,
 #night-mode-button,
-#caffeine-button {
+#caffeine-button,
+#vpn-button {
   min-height: 52px;
   border-radius: 16px;
   transition: all 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
@@ -16,13 +17,20 @@
 }
 
 #night-mode-button,
-#caffeine-button {
+#caffeine-button,
+#vpn-button {
   background-color: var(--primary);
   padding: 0 10px;
 }
 
+#night-mode-button:active,
+#caffeine-button:active {
+  border-radius: 26px;
+}
+
 #night-mode-button.disabled,
-#caffeine-button.disabled {
+#caffeine-button.disabled,
+#vpn-button.disabled {
   background-color: var(--surface);
   border-radius: 26px;
 }
@@ -31,16 +39,20 @@
 #network-status-button,
 #network-menu-button,
 #bluetooth-status-button,
-#bluetooth-menu-button {
+#bluetooth-menu-button,
+#vpn-status-button,
+#vpn-menu-button {
   background-color: var(--primary);
   padding: 0 8px;
   transition: all 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 
 #network-menu-button,
-#bluetooth-menu-button {
+#bluetooth-menu-button,
+#vpn-menu-button {
   border-left: 1px solid var(--outline);
   min-width: 24px;
+  border-radius: 0 16px 16px 0;
 }
 
 /* Estados Hover para todos los botones relevantes */
@@ -48,28 +60,46 @@
 #network-menu-button:hover,
 #bluetooth-status-button:hover,
 #bluetooth-menu-button:hover,
+#vpn-status-button:hover,
+#vpn-menu-button:hover,
+#network-manager-status-button:hover,
+#network-manager-menu-button:hover,
 #bluetooth-button:hover,
 #night-mode-button:hover,
-#caffeine-button:hover {
+#caffeine-button:hover,
+#vpn-button:hover {
   background-color: var(--foreground);
 }
 
 #network-menu-button:active,
-#bluetooth-menu-button:active {
+#bluetooth-menu-button:active,
+#vpn-menu-button:active,
+#network-manager-menu-button:active {
   border-radius: 0 26px 26px 0;
+}
+
+/* Estados Active */
+#network-status-button:active,
+#bluetooth-status-button:active,
+#vpn-status-button:active,
+#network-manager-status-button:active {
+  border-radius: 26px 0 0 26px;
 }
 
 /* Estados Disabled */
 #network-status-button.disabled,
 #network-menu-button.disabled,
 #bluetooth-status-button.disabled,
-#bluetooth-menu-button.disabled {
+#bluetooth-menu-button.disabled,
+#vpn-status-button.disabled,
+#vpn-menu-button.disabled {
   background-color: var(--surface);
   border-radius: 26px 0 0 26px;
 }
 
 #network-menu-button.disabled,
-#bluetooth-menu-button.disabled {
+#bluetooth-menu-button.disabled,
+#vpn-menu-button.disabled {
   border-left: 1px solid var(--surface-bright);
   border-radius: 0 26px 26px 0;
 }
@@ -78,27 +108,29 @@
 #network-menu-button.disabled:hover,
 #bluetooth-status-button.disabled:hover,
 #bluetooth-menu-button.disabled:hover,
+#vpn-status-button.disabled:hover,
+#vpn-menu-button.disabled:hover,
+#network-manager-status-button.disabled:hover,
+#network-manager-menu-button.disabled:hover,
 #night-mode-button.disabled:hover,
-#caffeine-button.disabled:hover {
+#caffeine-button.disabled:hover,
+#vpn-button.disabled:hover {
   background-color: var(--surface-bright);
 }
 
 /* Bordes diferenciados para botones compuestos */
 #network-status-button,
-#bluetooth-status-button {
+#bluetooth-status-button,
+#vpn-status-button {
   border-radius: 16px 0 0 16px;
-}
-
-#network-menu-button,
-#bluetooth-menu-button {
-  border-radius: 0 16px 16px 0;
 }
 
 /* === Estilos de Iconos === */
 #network-icon,
 #bluetooth-icon,
 #night-mode-icon,
-#caffeine-icon {
+#caffeine-icon,
+#vpn-icon {
   color: var(--shadow);
   font-size: 24px;
 }
@@ -106,19 +138,22 @@
 #network-icon.disabled,
 #bluetooth-icon.disabled,
 #night-mode-icon.disabled,
-#caffeine-icon.disabled {
+#caffeine-icon.disabled,
+#vpn-icon.disabled {
   color: var(--outline);
 }
 
 /* === Estilos de Etiquetas de Menú === */
 #network-menu-label,
-#bluetooth-menu-label {
+#bluetooth-menu-label,
+#vpn-menu-label {
   color: var(--shadow);
   font-size: 16px;
 }
 
 #network-menu-label.disabled,
-#bluetooth-menu-label.disabled {
+#bluetooth-menu-label.disabled,
+#vpn-menu-label.disabled {
   color: var(--outline);
 }
 
@@ -126,7 +161,8 @@
 #network-label,
 #bluetooth-label,
 #night-mode-label,
-#caffeine-label {
+#caffeine-label,
+#vpn-label {
   color: var(--shadow);
   font-size: 14px;
   font-weight: bold;
@@ -136,7 +172,8 @@
 #network-label.disabled,
 #bluetooth-label.disabled,
 #night-mode-label.disabled,
-#caffeine-label.disabled {
+#caffeine-label.disabled,
+#vpn-label.disabled {
   color: var(--outline);
 }
 
@@ -144,7 +181,8 @@
 #network-ssid,
 #bluetooth-status,
 #night-mode-status,
-#caffeine-status {
+#caffeine-status,
+#vpn-status {
   color: var(--surface-bright);
   font-size: 12px;
 }
@@ -152,6 +190,116 @@
 #network-ssid.disabled,
 #bluetooth-status.disabled,
 #night-mode-status.disabled,
-#caffeine-status.disabled {
+#caffeine-status.disabled,
+#vpn-status.disabled {
   color: var(--outline);
+}
+
+/* === Network Manager Wide Buttons === */
+#network-manager-button {
+  min-height: 52px;
+  border-radius: 16px;
+  background-color: unset;
+  padding: 0;
+}
+
+#network-manager-button.disabled {
+  background-color: unset;
+}
+
+/* Network Manager Status and Menu Buttons */
+#network-manager-status-button,
+#network-manager-menu-button {
+  background-color: var(--primary);
+  padding: 0 8px 0 12px;
+  transition: all 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+#network-manager-menu-button {
+  border-left: 1px solid var(--outline);
+  min-width: 32px;
+  border-radius: 0 16px 16px 0;
+}
+
+#network-manager-status-button {
+  border-radius: 16px 0 0 16px;
+}
+
+/* Network Manager Hover States (no transitions) */
+#network-manager-status-button:hover,
+#network-manager-menu-button:hover {
+  background-color: var(--foreground);
+}
+
+#network-manager-status-button.disabled,
+#network-manager-menu-button.disabled {
+  background-color: var(--surface);
+}
+
+#network-manager-status-button.disabled {
+  border-radius: 26px 0 0 26px;
+}
+
+#network-manager-menu-button.disabled {
+  border-left: 1px solid var(--surface-bright);
+  border-radius: 0 26px 26px 0;
+}
+
+#network-manager-status-button.disabled:hover,
+#network-manager-menu-button.disabled:hover {
+  background-color: var(--surface-bright);
+}
+
+/* Network Manager Icons */
+#network-manager-icon {
+  color: var(--shadow);
+  font-size: 24px;
+}
+
+#network-manager-icon.disabled {
+  color: var(--outline);
+}
+
+/* Network Manager Menu Labels */
+#network-manager-menu-label {
+  color: var(--shadow);
+  font-size: 16px;
+}
+
+#network-manager-menu-label.disabled {
+  color: var(--outline);
+}
+
+/* Network Manager Main Labels */
+#network-manager-label {
+  color: var(--shadow);
+  font-size: 14px;
+  font-weight: bold;
+}
+
+#network-manager-label.disabled {
+  color: var(--outline);
+}
+
+/* Network Manager Status Text */
+#network-manager-status {
+  color: var(--surface-bright);
+  font-size: 12px;
+}
+
+#network-manager-status.disabled {
+  color: var(--outline);
+}
+
+/* Ethernet Button - Full Rounded (when no menu button) */
+.ethernet-button #network-manager-status-button {
+  border-radius: 16px;
+}
+
+.ethernet-button #network-manager-status-button:active {
+  border-radius: 26px;
+}
+
+.ethernet-button #network-manager-status-button.disabled {
+  border-radius: 26px;
 }

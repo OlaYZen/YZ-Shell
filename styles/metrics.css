@@ -17,6 +17,10 @@
   border: 3px solid var(--green);
 }
 
+#metrics-circle.controller {
+  border: 3px solid var(--blue);
+}
+
 #metrics-circle.alert {
   border: 3px solid var(--red-dim);
 }
@@ -32,6 +36,16 @@
 #metrics-level {
   font-weight: bold;
   margin: 0 4px;
+}
+
+#metrics-level.controller {
+  font-weight: bold;
+  margin: 0 4px;
+  color: var(--blue);
+}
+
+#metrics-level.alert {
+  color: var(--red-dim);
 }
 
 #metrics-sep {
@@ -100,4 +114,13 @@
 
 #upload-icon-label.urgent {
   color: var(--shadow);
+}
+
+#controller-battery {
+  background-color: var(--shadow);
+}
+
+#controller-battery.invert {
+  background-color: var(--surface);
+  border-radius: 12px;
 }

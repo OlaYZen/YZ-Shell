@@ -175,6 +175,7 @@ class ICalEventManager:
                             event_end = event_end - timedelta(days=1)
 
                         summary = str(event.get('summary', 'Untitled Event'))
+                        location = str(event.get('location'))
                         description = str(event.get('description', ''))
 
                         rrule_prop = component.get('rrule')
@@ -203,6 +204,7 @@ class ICalEventManager:
                                 'start': to_iso(occ_start),
                                 'end': to_iso(occ_end),
                                 'all_day': all_day,
+                                'location': location
                             }
 
                             # Add event_info to all days spanned by event occurrence
@@ -266,6 +268,7 @@ class ICalEventManager:
                                             'start': to_iso(event_start),
                                             'end': to_iso(event_end),
                                             'all_day': all_day,
+                                            'location': location
                                         }
                                         new_event_dates[current_day].append(event_info)
                                         events_found += 1

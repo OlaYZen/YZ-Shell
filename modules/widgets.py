@@ -14,7 +14,10 @@ from modules.controls import ControlSliders
 from modules.ical_applet import ICalEventsApplet
 from modules.metrics import Metrics
 from modules.network import NetworkConnections
+from modules.vpn_connections import VpnConnections
+from modules.network_manager import NetworkManager
 from modules.password_prompt import PasswordPrompt
+from modules.vpn_prompt import VpnPrompt
 from modules.notifications import NotificationHistory
 from modules.player import Player
 
@@ -76,27 +79,33 @@ class Widgets(Box):
 
         self.network_connections = NetworkConnections(widgets=self)
         
-        self.ical_events_applet = ICalEventsApplet(widgets=self)
+        self.ical_events = ICalEventsApplet(widgets=self)
         
+        self.vpn_connections = VpnConnections(widgets=self)
+
         self.password_prompt = PasswordPrompt(widgets=self)
 
-        # Create calendar stack (no borders on individual items)
+        self.vpn_prompt = VpnPrompt(widgets=self)
+
+        self.network_manager = NetworkManager(widgets=self)
+
         self.calendar_stack = Stack(
             transition_type="slide-left-right",
             children=[
                 self.calendar,
                 self.password_prompt,
+                self.vpn_prompt,
+                self.network_manager,
             ]
         )
-        # Set calendar as default visible child
+
         GLib.idle_add(lambda: self.calendar_stack.set_visible_child(self.calendar))
 
-        # Create wrapper box around calendar stack with width constraints
         self.calendar_stack_box = Box(
             name="calendar-stack",
-            h_expand=False,  # Don't expand horizontally
+            h_expand=False,
             v_expand=True,
-            h_align="center",  # Center the box
+            h_align="center",
             children=[
                 self.calendar_stack,
             ]
@@ -110,7 +119,8 @@ class Widgets(Box):
                 self.notification_history,
                 self.network_connections,
                 self.bluetooth,
-                self.ical_events_applet,
+                self.ical_events,
+                self.vpn_connections,
             ]
         )
 
@@ -186,23 +196,35 @@ class Widgets(Box):
 
         self.add(self.container_3)
 
-    def show_bt(self):
+    def show_bluetooth(self):
         self.applet_stack.set_visible_child(self.bluetooth)
 
-    def show_notif(self):
+    def show_notifications(self):
         self.applet_stack.set_visible_child(self.notification_history)
 
-    def show_network_applet(self):
+    def show_vpn(self):
+        self.applet_stack.set_visible_child(self.vpn_connections)
+
+    def show_network(self):
         self.notch.open_notch("network_applet")
-    
+
+    def show_network_manager(self):
+        self.calendar_stack.set_visible_child(self.network_manager)
+
+    def show_network_password_prompt_debug(self):
+        self.calendar_stack.set_visible_child(self.password_prompt)
+
+    def show_calendar(self):
+        self.calendar_stack.set_visible_child(self.calendar)
+
     def show_ical_events(self, selected_date):
         """Show iCal events for the selected date"""
-        self.ical_events_applet.show_events_for_date(selected_date)
-        self.applet_stack.set_visible_child(self.ical_events_applet)
+        self.ical_events.show_events_for_date(selected_date)
+        self.applet_stack.set_visible_child(self.ical_events)
     
     def is_ical_events_visible(self):
         """Check if the iCal events applet is currently visible"""
-        return self.applet_stack.get_visible_child() == self.ical_events_applet
+        return self.applet_stack.get_visible_child() == self.ical_events
     
     def is_notifications_visible(self):
         """Check if the notification history is currently visible"""
@@ -210,16 +232,19 @@ class Widgets(Box):
     
     def show_password_prompt(self, ssid, bssid, on_connect_callback):
         """Show the password prompt in the calendar area"""
-        # Set up the password prompt
         def on_connect(password):
-            # Call the original callback
             on_connect_callback(password)
-            # Return to calendar view
             self.calendar_stack.set_visible_child(self.calendar)
-        
-        def on_cancel():
-            # Return to calendar view
-            self.calendar_stack.set_visible_child(self.calendar)
-        
-        self.password_prompt.show_for_network(ssid, bssid, on_connect, on_cancel)
+
+        self.password_prompt.show_for_network(ssid, bssid, on_connect)
         self.calendar_stack.set_visible_child(self.password_prompt)
+
+
+    def show_vpn_password_prompt(self, vpn_name, on_connect_callback):
+        """Show the VPN password prompt in the calendar stack"""
+        def on_connect(password):
+            on_connect_callback(password)
+            self.calendar_stack.set_visible_child(self.network_manager)
+
+        self.vpn_prompt.show_for_vpn(vpn_name, on_connect)
+        self.calendar_stack.set_visible_child(self.vpn_prompt)

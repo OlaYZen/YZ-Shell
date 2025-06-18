@@ -11,13 +11,13 @@ from fabric.widgets.centerbox import CenterBox
 from fabric.widgets.datetime import DateTime
 from fabric.widgets.label import Label
 from fabric.widgets.revealer import Revealer
-from gi.repository import Gdk, GLib, Gtk
+from gi.repository import Gdk, GLib, Gtk # type: ignore
 
 import config.data as data
 import modules.icons as icons
 from modules.controls import ControlSmall
 from modules.dock import Dock
-from modules.metrics import Battery, MetricsSmall, NetworkApplet
+from modules.metrics import Battery, MetricsSmall, NetworkApplet, ControllerBattery
 from modules.systemtray import SystemTray
 from modules.weather import Weather
 from widgets.wayland import WaylandWindow as Window
@@ -220,6 +220,7 @@ class Bar(Window):
         self.control = ControlSmall()
         self.metrics = MetricsSmall()
         self.battery = Battery()
+        self.controller_battery = ControllerBattery()
 
         self.apply_component_props()
 
@@ -271,6 +272,7 @@ class Bar(Window):
         self.h_end_children = [
             self.boxed_revealer_right,
             self.battery,
+            self.controller_battery,
             self.systray,
             self.button_tools,
             self.language,
@@ -294,6 +296,7 @@ class Bar(Window):
 
         self.v_end_children = [
             self.battery,
+            self.controller_battery,
             self.metrics,
             self.language,
             self.date_time,
@@ -373,6 +376,7 @@ class Bar(Window):
             self.weather,
             self.network,
             self.battery,
+            self.controller_battery,
             self.metrics,
             self.systray,
             self.control,
@@ -449,6 +453,7 @@ class Bar(Window):
             "ws_container": self.ws_container,
             "weather": self.weather,
             "battery": self.battery,
+            "controller_battery": self.controller_battery,
             "metrics": self.metrics,
             "language": self.language,
             "date_time": self.date_time,
@@ -470,6 +475,7 @@ class Bar(Window):
             "ws_container": self.ws_container,
             "weather": self.weather,
             "battery": self.battery,
+            "controller_battery": self.controller_battery,
             "metrics": self.metrics,
             "language": self.language,
             "date_time": self.date_time,
@@ -526,7 +532,7 @@ class Bar(Window):
         if self.notch:
             self.notch.open_notch("tools")
 
-    def on_language_switch(self, _=None, event: HyprlandEvent = None):
+    def on_language_switch(self, _=None, event: HyprlandEvent = None): # type: ignore   
         lang_data = (
             event.data[1]
             if event and event.data and len(event.data) > 1

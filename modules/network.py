@@ -165,7 +165,7 @@ class NetworkConnections(Box):
         self.back_button = Button(
             name="network-back",
             child=Label(name="network-back-label", markup=icons.chevron_left),
-            on_clicked=lambda *_: self.widgets.show_notif()
+            on_clicked=lambda *_: self.widgets.show_notifications()
         )
         
 
@@ -189,7 +189,7 @@ class NetworkConnections(Box):
         header_box = CenterBox(
             name="network-header",
             start_children=[self.back_button],
-            center_children=[Label(name="network-title", label="Wi-Fi Networks")],
+            center_children=[Label(name="applet-title", label="Wi-Fi Networks")],
             end_children=[Box(orientation="horizontal", spacing=4, children=[self.refresh_button])]
         )
 
@@ -321,7 +321,7 @@ class DashboardNetworkConnections(Box):
 
         header_box = CenterBox(
             name="network-header",
-            start_children=[Label(name="network-title", label="Wi-Fi Networks", h_expand=True, h_align="start")],
+            start_children=[Label(name="applet-title", label="Wi-Fi Networks", h_expand=True, h_align="start")],
             end_children=[Box(orientation="horizontal", spacing=4, children=[
                 self.wifi_toggle_button,
                 self.refresh_button

@@ -287,7 +287,7 @@ class Calendar(Gtk.Box):
             # If any applet other than notifications is currently visible, return to notifications
             if self.widgets and hasattr(self.widgets, 'is_notifications_visible') and not self.widgets.is_notifications_visible():
                 print(f"Calendar: An applet is open, returning to notifications")
-                self.widgets.show_notif()
+                self.widgets.show_notifications()
             else:
                 print(f"Calendar: Already on notifications, click on day without events ignored")
 

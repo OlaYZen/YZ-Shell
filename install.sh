@@ -24,6 +24,7 @@ PACKAGES=(
   matugen-bin
   noto-fonts-emoji
   nvtop
+  openresolv
   playerctl
   python-dateutil
   python-fabric-git
@@ -49,6 +50,7 @@ PACKAGES=(
   uwsm
   vte3
   webp-pixbuf-loader
+  wireguard-tools
   wl-clipboard
 )
 
@@ -79,6 +81,9 @@ else
     echo "Cloning YZ-Shell..."
     git clone --depth=1 "$REPO_URL" "$INSTALL_DIR"
 fi
+
+# Creates the VPN folder
+mkdir "$INSTALL_DIR/VPN"
 
 # Install required packages using the detected AUR helper (only if missing)
 echo "Installing required packages..."

@@ -77,6 +77,7 @@ DEFAULTS = {
     'bar_language_visible': True,
     'bar_date_time_visible': True,
     'bar_button_power_visible': True,
+    'bar_controller_battery_visible': True,
     'corners_visible': True,
     'bar_metrics_disks': ["/"],
     'metrics_visible': {

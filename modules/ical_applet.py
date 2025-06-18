@@ -1,5 +1,7 @@
 import gi
 from datetime import date, datetime, timezone
+import re
+import unicodedata
 
 gi.require_version('Gtk', '3.0')
 from fabric.widgets.box import Box
@@ -10,6 +12,8 @@ from fabric.widgets.scrolledwindow import ScrolledWindow
 from gi.repository import Gtk
 from tzlocal import get_localzone
 from zoneinfo import ZoneInfo
+
+
 
 import modules.icons as icons
 from modules.ical_events import ical_manager
@@ -29,19 +33,29 @@ class ICalEventSlot(Box):
         
         self.event_data = event_data
         
-        # Event title
+        source_name = event_data.get('source', 'Unknown Calendar')
+
         title = event_data.get('title', event_data.get('summary', 'Untitled Event'))
+
+        # Removes the ugly Emojis if the user has the offical f1 icals
+        if source_name == 'Formula 1':
+            emoji_pattern = r'[🏎⏱️🏁]'
+            title = re.sub(emoji_pattern, '', title).strip()
+            title = unicodedata.normalize('NFKC', title)
+                        
         self.title_label = Label(
             name="ical-event-title",
             label=title,
             h_align="start",
             ellipsization="end"
         )
-        
         # Event time and source
         time_str = self._format_event_time()
-        source_name = event_data.get('source', 'Unknown Calendar')
-        display_str = f"{time_str} • {source_name}"
+        location = event_data.get('location', '')
+        if (location == "None"):
+            display_str = f"{time_str} • {source_name}"  
+        else:
+            display_str = f'{location} • {time_str} • {source_name}'
         self.time_label = Label(
             name="ical-event-time", 
             label=display_str,
@@ -147,7 +161,7 @@ class ICalEventsApplet(Box):
         self.back_button = Button(
             name="ical-back",
             child=Label(name="ical-back-label", markup=icons.chevron_left),
-            on_clicked=lambda *_: self.widgets.show_notif() if self.widgets else None
+            on_clicked=lambda *_: self.widgets.show_notifications() if self.widgets else None
         )
         
         # Title showing selected date

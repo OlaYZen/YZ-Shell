@@ -35,6 +35,7 @@ battery: str = "&#xea38;"
 memory: str = "&#xfa97;"
 cpu: str = "&#xef8e;"
 gpu: str = "&#xf233;"
+controller: str = "&#xf1d2;"
 
 # AIchat
 reload: str = "&#xf3ae;"
@@ -81,6 +82,8 @@ world_off: str = "&#xf1ca;"
 bluetooth: str = "&#xea37;"
 night: str = "&#xeaf8;"
 coffee: str = "&#xef0e;"
+vpnOff: str = "&#xf9c5;"
+vpnOn: str = "&#xf9d0;"
 notifications: str = "&#xea35;"
 
 wifi_off: str = "&#xecfa;"

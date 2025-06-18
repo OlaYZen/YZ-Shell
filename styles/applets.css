@@ -41,7 +41,7 @@
   font-weight: bold;
 }
 
-#bluetooth-text,
+#applet-title,
 #bluetooth-section {
   font-weight: bold;
 }
@@ -69,6 +69,14 @@
 }
 
 #wifi-connect-button.connected label {
+  color: var(--shadow);
+}
+
+#vpn-connect-button.connected {
+  background-color: var(--green);
+}
+
+#vpn-connect-button.connected label {
   color: var(--shadow);
 }
 
@@ -128,18 +136,17 @@
 
 
 
-#wifi-password-prompt {
-  /* Match calendar padding */
+#applet-padding {
   padding: 4px;
 }
 
-#password-header {
+#applet-header {
   border-radius: 12px;
   border: 2px solid var(--surface);
   padding: 4px;
 }
 
-#password-title {
+#applet-title {
   font-weight: bold;
 }
 
@@ -247,6 +254,205 @@
 
 #bluetooth-scan-label.scanning {
   animation: blink 0.5s ease infinite;
+}
+
+
+#vpn-prompt-padding {
+  padding: 4px;
+}
+
+#vpn-prompt-header {
+  border-radius: 12px;
+  border: 2px solid var(--surface);
+  padding: 4px;
+}
+
+#vpn-prompt-title {
+  font-weight: bold;
+}
+
+#vpn-back {
+  background-color: var(--surface);
+  border-radius: 8px;
+  padding: 4px;
+}
+
+#vpn-back:hover {
+  background-color: var(--surface-bright);
+}
+
+#vpn-back:active {
+  background-color: var(--primary);
+}
+
+#vpn-back-label {
+  color: var(--primary);
+  font-size: 20px;
+}
+
+#vpn-back:active #vpn-back-label {
+  color: var(--shadow);
+}
+
+#vpn-prompt-content {
+  border-radius: 16px;
+  padding: 4px;
+}
+
+#vpn-prompt-info {
+  font-size: 16px;
+  font-weight: bold;
+  margin-bottom: 8px;
+}
+
+#vpn-password-entry {
+  background-color: var(--surface);
+  border: 2px solid var(--outline);
+  border-radius: 8px;
+  font-size: 14px;
+  padding: 8px;
+}
+
+#vpn-password-entry:focus {
+  border-color: var(--primary);
+}
+
+#vpn-show-password-button {
+  background-color: var(--surface);
+  border-radius: 8px;
+  padding: 8px;
+}
+
+#vpn-show-password-button:hover {
+  background-color: var(--surface-bright);
+}
+
+#vpn-password-cancel-button,
+#vpn-password-connect-button {
+  background-color: var(--surface);
+  border-radius: 8px;
+  padding: 8px 16px;
+}
+
+#vpn-password-cancel-button:hover,
+#vpn-password-connect-button:hover {
+  background-color: var(--surface-bright);
+}
+
+#vpn-password-connect-button {
+  background-color: var(--primary);
+  color: var(--shadow);
+}
+
+#vpn-password-connect-button:hover label {
+  color: var(--primary);
+}
+
+#vpn-password-connect-button label {
+  color: var(--shadow);
+}
+
+#vpn-password-connect-button:hover {
+  background-color: var(--blue-bright);
+}
+
+#wifi-prompt-padding {
+  padding: 4px;
+}
+
+#wifi-prompt-header {
+  border-radius: 12px;
+  border: 2px solid var(--surface);
+  padding: 4px;
+}
+
+#wifi-prompt-title {
+  font-weight: bold;
+}
+
+#wifi-back {
+  background-color: var(--surface);
+  border-radius: 8px;
+  padding: 4px;
+}
+
+#wifi-back:hover {
+  background-color: var(--surface-bright);
+}
+
+#wifi-back:active {
+  background-color: var(--primary);
+}
+
+#wifi-back-label {
+  color: var(--primary);
+  font-size: 20px;
+}
+
+#wifi-back:active #wifi-back-label {
+  color: var(--shadow);
+}
+
+#wifi-prompt-content {
+  border-radius: 16px;
+  padding: 4px;
+}
+
+#wifi-prompt-info {
+  font-size: 16px;
+  font-weight: bold;
+  margin-bottom: 8px;
+}
+
+#wifi-password-entry {
+  background-color: var(--surface);
+  border: 2px solid var(--outline);
+  border-radius: 8px;
+  font-size: 14px;
+  padding: 8px;
+}
+
+#wifi-password-entry:focus {
+  border-color: var(--primary);
+}
+
+#wifi-show-password-button {
+  background-color: var(--surface);
+  border-radius: 8px;
+  padding: 8px;
+}
+
+#wifi-show-password-button:hover {
+  background-color: var(--surface-bright);
+}
+
+#wifi-password-cancel-button,
+#wifi-password-connect-button {
+  background-color: var(--surface);
+  border-radius: 8px;
+  padding: 8px 16px;
+}
+
+#wifi-password-cancel-button:hover,
+#wifi-password-connect-button:hover {
+  background-color: var(--surface-bright);
+}
+
+#wifi-password-connect-button {
+  background-color: var(--primary);
+  color: var(--shadow);
+}
+
+#wifi-password-connect-button:hover label {
+  color: var(--primary);
+}
+
+#wifi-password-connect-button label {
+  color: var(--shadow);
+}
+
+#wifi-password-connect-button:hover {
+  background-color: var(--blue-bright);
 }
 
 @keyframes blink {

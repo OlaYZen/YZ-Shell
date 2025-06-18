@@ -575,6 +575,19 @@ class Notch(Window):
                 self.dashboard.go_to_section("widgets")
                 self.applet_stack.set_visible_child(self.nhistory)
 
+            # Show calendar widget without animation only on notch open
+            calendar_stack = getattr(self.dashboard.widgets, "calendar_stack", None)
+            calendar_widget = getattr(self.dashboard.widgets, "calendar", None)
+            if calendar_stack and calendar_widget:
+                current_calendar_child = calendar_stack.get_visible_child()
+                if current_calendar_child != calendar_widget:
+                    # Temporarily disable animation
+                    old_transition = calendar_stack.get_transition_type()
+                    calendar_stack.set_transition_type(Gtk.StackTransitionType.NONE)
+                    calendar_stack.set_visible_child(calendar_widget)
+                    # Restore animation after a short delay
+                    GLib.timeout_add(50, lambda: calendar_stack.set_transition_type(old_transition))
+
             
         if data.BAR_POSITION in ["Top", "Bottom"] and data.PANEL_THEME == "Panel" or data.BAR_POSITION in ["Bottom"] and data.PANEL_THEME == "Notch":
             self.bar.revealer_right.set_reveal_child(True)
@@ -929,12 +942,18 @@ class Notch(Window):
         if (self.stack.get_visible_child() == self.dashboard and 
             self.dashboard.stack.get_visible_child() == self.dashboard.widgets):
             
-            # Check if password prompt is active - don't intercept typing if it is
+            # Access the calendar stack
             calendar_stack = self.dashboard.widgets.calendar_stack
-            if (hasattr(self.dashboard.widgets, 'password_prompt') and 
+
+            # Check if the Wi-Fi password prompt is active
+            if (hasattr(self.dashboard.widgets, 'password_prompt') and
                 calendar_stack.get_visible_child() == self.dashboard.widgets.password_prompt):
-                return False  # Let the password entry handle the typing
-            
+                return False  # Let the Wi-Fi password prompt handle typing
+
+            # Check if the VPN password prompt is active
+            if (hasattr(self.dashboard.widgets, 'vpn_prompt') and
+                calendar_stack.get_visible_child() == self.dashboard.widgets.vpn_prompt):
+                return False  # Let the VPN password prompt handle typing
 
             if self.stack.get_visible_child() == self.launcher:
                 return False

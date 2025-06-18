@@ -108,7 +108,7 @@ class BluetoothConnections(Box):
         self.back_button = Button(
             name="bluetooth-back",
             child=Label(name="bluetooth-back-label", markup=icons.chevron_left),
-            on_clicked=lambda *_: self.widgets.show_notif()
+            on_clicked=lambda *_: self.widgets.show_notifications()
         )
 
         if self.client:
@@ -130,7 +130,7 @@ class BluetoothConnections(Box):
             CenterBox(
                 name="bluetooth-header",
                 start_children=self.back_button,
-                center_children=Label(name="bluetooth-text", label="Bluetooth Devices"),
+                center_children=Label(name="applet-title", label="Bluetooth Devices"),
                 end_children=self.scan_button
             ),
             ScrolledWindow(

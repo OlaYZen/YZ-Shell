@@ -176,3 +176,83 @@ class UPowerManager():
             return "Pending charge"
         elif (state == 6):
             return "Pending discharge"
+
+    def get_controller_devices(self):
+        """
+        Detect gaming controllers/peripherals with batteries.
+        Returns a list of device paths that are likely controllers.
+        """
+        try:
+            devices = self.detect_devices()
+            controller_devices = []
+            
+            for device_path in devices:
+                try:
+                    device_info = self.get_full_device_information(device_path)
+                    if device_info is None:
+                        continue
+                    
+                    # Check if device has battery and is not the main system battery
+                    if (device_info.get('IsPresent') and 
+                        device_info.get('Percentage', 0) > 0 and
+                        not device_info.get('PowerSupply', True)):  # PowerSupply=False indicates peripheral
+                        
+                        # Additional filtering based on device path or model names
+                        device_path_lower = device_path.lower()
+                        model = device_info.get('Model', '').lower()
+                        vendor = device_info.get('Vendor', '').lower()
+                        
+                        # Common controller identifiers
+                        controller_indicators = [
+                            'gamepad', 'controller', 'joystick', 'xbox', 'playstation', 
+                            'ps4', 'ps5', 'nintendo', 'switch', 'pro controller',
+                            'dualshock', 'dualsense', 'joycon', 'joy-con'
+                        ]
+                        
+                        # Check if any controller indicators are present
+                        is_controller = any(
+                            indicator in device_path_lower or 
+                            indicator in model or 
+                            indicator in vendor
+                            for indicator in controller_indicators
+                        )
+                        
+                        if is_controller:
+                            controller_devices.append({
+                                'path': device_path,
+                                'model': device_info.get('Model', 'Controller'),
+                                'vendor': device_info.get('Vendor', 'Unknown'),
+                                'percentage': device_info.get('Percentage', 0),
+                                'state': device_info.get('State', 0)
+                            })
+                            
+                except Exception as e:
+                    # Skip devices that can't be queried
+                    continue
+                    
+            return controller_devices
+            
+        except Exception as e:
+            print(f"Error detecting controller devices: {e}")
+            return []
+
+    def get_controller_info(self, device_path):
+        """
+        Get detailed information for a specific controller device.
+        """
+        try:
+            device_info = self.get_full_device_information(device_path)
+            if device_info is None:
+                return None
+                
+            return {
+                'percentage': device_info.get('Percentage', 0),
+                'state': device_info.get('State', 0),  # 1=charging, 2=discharging
+                'time_to_empty': device_info.get('TimeToEmpty', 0),
+                'time_to_full': device_info.get('TimeToFull', 0),
+                'model': device_info.get('Model', 'Controller'),
+                'vendor': device_info.get('Vendor', 'Unknown')
+            }
+        except Exception as e:
+            print(f"Error getting controller info for {device_path}: {e}")
+            return None

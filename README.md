@@ -90,6 +90,22 @@ This fork includes several enhancements and improvements over the original Ax-Sh
 - **Smart Network Handling**: Automatic detection of saved networks with priority connection attempts
 - **Enhanced Visual Feedback**: Clear network status with security indicators and connection progress
 
+### **🛡️ VPN Management Integration**
+- **WireGuard VPN Support**: Manage WireGuard VPN connections directly from the shell with full configuration management
+- **Subfolder Organization**: Support for organizing VPN configurations in subdirectories (e.g., `VPN/work/office.conf`, `VPN/personal/home.conf`)
+- **Recursive Configuration Discovery**: Automatically scans all subfolders for .conf files, allowing unlimited organizational depth
+- **Smart Path Display**: Shows folder structure in VPN names for easy identification while maintaining compatibility with WireGuard interface names
+- **Secure Password Prompt**: In-dashboard sudo password prompt for VPN connect/disconnect actions with password visibility toggle
+- **Connection Status Indicators**: Visual feedback for active and previous VPN connections with clear status messages
+- **Seamless VPN Switching**: Single password prompt for disconnecting current and connecting to new VPN
+- **Previous VPN Memory**: Automatically remembers last connected VPN for quick reconnection across sessions
+
+### **🎮 Gaming Controller Battery Monitoring**
+- **Automatic Controller Detection**: Uses UPower to automatically detect wireless gaming controllers with batteries (Xbox, PlayStation, Nintendo, etc.)
+- **Real-Time Battery Status**: Live battery percentage display with circular progress indicators next to main battery
+- **Multiple Controller Support**: Simultaneously monitor multiple connected controllers with individual widgets
+- **Visual Indicators**: Low battery alerts (≤15%) with red styling and detailed tooltips showing model, charge level, and time remaining
+
 ## 📊 Complete Feature List
 
 ### **🚀 Application Management**
@@ -117,6 +133,7 @@ This fork includes several enhancements and improvements over the original Ax-Sh
 - Bluetooth device manager
 - Battery level and power state monitoring
 - Audio volume and brightness controls
+- Controller battery monitoring
 - Weather widget with automatic location detection
 
 ### **📸 Media Tools**
@@ -176,9 +193,11 @@ This fork includes several enhancements and improvements over the original Ax-Sh
 ### **System Monitoring & Controls**
 - **Real-time Metrics** - CPU, RAM, GPU, disk usage with live graphs
 - **Network Manager** - WiFi, Ethernet connection management  
+- **VPN Manager** - WireGuard VPN connections with subfolder organization support
 - **Bluetooth Manager** - Device pairing, connection control
 - **Audio Controls** - Volume, brightness, media player controls
 - **Battery Monitor** - Charge level, power state indicators
+- **Controller Battery Monitor** - Gaming controller battery levels with multi-device support
 - **Weather Widget** - Current conditions with auto-location
 
 ### **Media & Screenshot Tools**
@@ -199,11 +218,12 @@ This fork includes several enhancements and improvements over the original Ax-Sh
 - **App Launcher Button** - Access to all applications and tools
 - **Workspace Indicators** - Current workspace with optional numbering
 - **System Tray** - Running applications and system services
-- **Network Applet** - Connection status and management
+- **Network Applet** - Connection status and management (WiFi, Ethernet, VPN)
 - **Control Center** - Quick settings for audio, brightness, Bluetooth
 - **Weather Display** - Current temperature and conditions
 - **System Metrics** - CPU, RAM, disk usage indicators
 - **Battery Monitor** - Charge level and status
+- **Controller Battery Indicators** - Gaming controller battery levels (auto-appears when controllers connected)
 - **Date/Time** - Current date and time display
 - **Power Menu** - Shutdown, restart, logout options
 
@@ -428,6 +448,15 @@ uwsm -- app python ~/.config/YZ-Shell/main.py > /dev/null 2>&1 & disown
 
 ### **Advanced Mouse Operations**
 
+**🛡️ VPN Management**
+- **VPN Button (Network Manager)**:
+  - **Left Click**: Connect to previous VPN or disconnect current VPN
+  - **Right Click**: Open VPN connections panel
+- **VPN Connections Panel**:
+  - **Connect Button**: One-click connection with automatic password prompt
+  - **Connected VPN**: Shows "Connected" status with disconnect option
+  - **Starred VPNs**: ⭐ indicates previously connected VPN for quick identification
+
 **📸 Screenshot Tools**
 - **Left Click**: Normal screenshot (region/fullscreen/window)
 - **Right Click**: Mockup screenshot with device frame
@@ -518,6 +547,27 @@ All bar components can be individually toggled:
 - **Panel Themes**: Notch, Panel, Overlay
 - **Adaptive Colors**: Automatic theme generation from wallpapers
 
+### **VPN Configuration**
+Place your WireGuard `.conf` files in `~/.config/YZ-Shell/VPN/` with full subfolder support:
+
+```
+VPN/
+├── work/
+│   ├── office-vpn.conf
+│   └── client-site.conf
+├── personal/
+│   ├── home-server.conf
+│   └── travel-vpn.conf
+└── server.conf
+```
+
+**Features:**
+- **Automatic Discovery**: Recursively scans all subfolders for `.conf` files
+- **Organized Display**: Shows folder structure (e.g., "work/office-vpn", "personal/home-server")
+- **Quick Connect**: One-click connection to any configured VPN
+- **Status Tracking**: Visual indicators for active and previously connected VPNs
+- **Seamless Switching**: Single password prompt for switching between VPNs
+
 ## 🔗 Dependencies
 
 ### **Core Framework**
@@ -583,7 +633,7 @@ All bar components can be individually toggled:
 - [x] Vertical Layout
 - [x] Wallpaper Selector
 - [x] Workspaces Overview
-- [ ] VPN (WireGuard configs)
+- [x] VPN (WireGuard configs)
 - [ ] Live Notifications (Similar to OneUi 7)
 - [ ] Multi-monitor support
 - [ ] Multimodal AI Assistant

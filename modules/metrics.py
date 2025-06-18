@@ -14,7 +14,7 @@ from fabric.widgets.label import Label
 from fabric.widgets.overlay import Overlay
 from fabric.widgets.revealer import Revealer
 from fabric.widgets.scale import Scale
-from gi.repository import GLib
+from gi.repository import GLib  # type: ignore
 
 import config.data as data
 from modules.upower.upower import UPowerManager
@@ -40,6 +40,10 @@ class MetricsProvider:
         self.bat_charging = None
         self.bat_time = 0
 
+        # Controller battery tracking
+        self.controllers = []
+        self.controller_data = {}
+
         self._gpu_update_running = False
 
         GLib.timeout_add_seconds(1, self._update)
@@ -52,6 +56,7 @@ class MetricsProvider:
         if not self._gpu_update_running:
             self._start_gpu_update_async()
 
+        # Update main battery
         battery = self.upower.get_full_device_information(self.display_device)
         if battery is None:
             self.bat_percent = 0.0
@@ -62,7 +67,36 @@ class MetricsProvider:
             self.bat_charging = battery['State'] == 1
             self.bat_time = battery['TimeToFull'] if self.bat_charging else battery['TimeToEmpty']
 
+        # Update controller batteries
+        self._update_controllers()
+
         return True
+
+    def _update_controllers(self):
+        """Update controller battery information"""
+        try:
+            current_controllers = self.upower.get_controller_devices()
+            
+            # Update existing controller data
+            for controller in current_controllers:
+                path = controller['path']
+                controller_info = self.upower.get_controller_info(path)
+                
+                if controller_info:
+                    self.controller_data[path] = {
+                        'percentage': controller_info['percentage'],
+                        'charging': controller_info['state'] == 1,  # 1 = charging
+                        'time': controller_info['time_to_full'] if controller_info['state'] == 1 else controller_info['time_to_empty'],
+                        'model': controller_info['model'],
+                        'vendor': controller_info['vendor']
+                    }
+            
+            # Remove disconnected controllers
+            current_paths = {controller['path'] for controller in current_controllers}
+            self.controller_data = {path: data for path, data in self.controller_data.items() if path in current_paths}
+            
+        except Exception as e:
+            logger.error(f"Error updating controllers: {e}")
 
     def _start_gpu_update_async(self):
         """Starts a new GLib thread to run nvtop in the background."""
@@ -170,6 +204,10 @@ class MetricsProvider:
         except Exception as e:
             logger.error(f"Unexpected error during GPU init: {e}")
             return []
+
+    def get_controllers(self):
+        """Get controller battery data"""
+        return self.controller_data
 
 shared_provider = MetricsProvider()
 
@@ -500,22 +538,26 @@ class Battery(Button):
             self.hide_timer = None
             return False
 
-    def update_battery(self, sender, battery_data):
-        value, charging, time = battery_data
-        if value == 0:
+    def update_battery(self, sender, value):
+        battery_percent, charging, time = value
+        if battery_percent == 0:
             self.set_visible(False)
         else:
-            self.set_visible(True)
-            self.bat_circle.set_value(value / 100)
-        percentage = int(value)
+            # Check if battery should be visible based on bar component settings
+            should_be_visible = data.BAR_COMPONENTS_VISIBILITY.get('battery', True)
+            self.set_visible(should_be_visible)
+            self.bat_circle.set_value(battery_percent / 100)
+        percentage = int(battery_percent)
         self.bat_level.set_label(self._format_percentage(percentage))
 
         if percentage <= 15:
             self.bat_icon.add_style_class("alert")
             self.bat_circle.add_style_class("alert")
+            self.bat_level.add_style_class("alert")
         else:
             self.bat_icon.remove_style_class("alert")
             self.bat_circle.remove_style_class("alert")
+            self.bat_level.remove_style_class("alert")
 
         if time < 60:
             time_status = f"{int(time)}sec"
@@ -544,6 +586,245 @@ class Battery(Button):
             charging_status = "Battery"
 
         self.set_tooltip_markup(f"{charging_status}" if not data.VERTICAL else f"{charging_status}: {percentage}%")
+
+class ControllerBattery(Box):
+    def __init__(self, **kwargs):
+        super().__init__(name="controller-battery", orientation="h", spacing=4, **kwargs)
+
+        self.controller_widgets = {}
+        self.hide_timers = {}
+        self.hover_counters = {}
+        self.container_visible = False
+
+        # Start with container hidden
+        self.set_visible(False)
+
+        # Poll for controller updates
+        GLib.timeout_add_seconds(2, self._update_controller_widgets)
+        GLib.idle_add(self._update_controller_widgets)
+
+    def _update_controller_widgets(self):
+        """Update controller battery widgets based on connected controllers"""
+        controllers = shared_provider.get_controllers()
+        
+        # Remove widgets for disconnected controllers with animation
+        for path in list(self.controller_widgets.keys()):
+            if path not in controllers:
+                def remove_widget(widget_path=path):
+                    if widget_path in self.controller_widgets:
+                        widget = self.controller_widgets[widget_path]
+                        self.remove(widget['main_revealer'])
+                        del self.controller_widgets[widget_path]
+                        if widget_path in self.hide_timers:
+                            GLib.source_remove(self.hide_timers[widget_path])
+                            del self.hide_timers[widget_path]
+                        if widget_path in self.hover_counters:
+                            del self.hover_counters[widget_path]
+                    return False
+                
+                # Animate out before removing
+                self._animate_widget_out(path, remove_widget)
+
+        # Add or update widgets for connected controllers
+        for path, controller_data in controllers.items():
+            if path not in self.controller_widgets:
+                # Create new widget for this controller
+                self._create_controller_widget(path, controller_data)
+            else:
+                # Update existing widget
+                self._update_controller_widget(path, controller_data)
+
+        # Check if component should be visible based on bar settings
+        component_enabled = data.BAR_COMPONENTS_VISIBILITY.get('controller_battery', True)
+        
+        # Show/hide the entire container based on both controller presence AND component settings
+        has_controllers = len(controllers) > 0
+        should_be_visible = has_controllers and component_enabled
+        
+        if should_be_visible and not self.container_visible:
+            self.container_visible = True
+            self.set_visible(True)
+        elif not should_be_visible and self.container_visible:
+            # Hide immediately when disabled in settings, delay when no controllers
+            self.container_visible = False
+            if not component_enabled:
+                # Hide immediately if disabled in settings
+                self.set_visible(False)
+            else:
+                # Delay hiding container until all animations complete if just no controllers
+                GLib.timeout_add(400, lambda: self.set_visible(False) if not self.container_visible else False)
+        elif not should_be_visible:
+            # Ensure it stays hidden when it should be
+            self.set_visible(False)
+        
+        return True
+
+    def _create_controller_widget(self, path, controller_data):
+        """Create a new controller battery widget"""
+        controller_icon = Label(name="metrics-icon", markup=icons.controller)
+        controller_circle = CircularProgressBar(
+            name="metrics-circle",
+            value=controller_data['percentage'] / 100.0,
+            size=28,
+            line_width=2,
+            start_angle=150,
+            end_angle=390,
+            style_classes="controller",
+            child=controller_icon,
+        )
+        
+        controller_level = Label(
+            name="metrics-level", 
+            style_classes="controller", 
+            label=f"{int(controller_data['percentage'])}%"
+        )
+        
+        controller_revealer = Revealer(
+            name="metrics-controller-revealer",
+            transition_duration=250,
+            transition_type="slide-left",
+            child=controller_level,
+            child_revealed=False,
+        )
+        
+        controller_box = Box(
+            name="metrics-controller-box",
+            orientation="h",
+            spacing=0,
+            children=[controller_circle, controller_revealer],
+        )
+
+        # Create a button wrapper for hover effects
+        controller_button = Button(
+            name="metrics-small",
+            child=controller_box
+        )
+        
+        # Create main revealer for smooth appearance animation
+        main_revealer = Revealer(
+            name="controller-widget-revealer",
+            transition_duration=300,
+            transition_type="slide-right" if not data.VERTICAL else "slide-down",
+            child=controller_button,
+            child_revealed=False,  # Start hidden
+        )
+        
+        # Store widget references
+        widget_data = {
+            'box': controller_button,
+            'main_revealer': main_revealer,
+            'icon': controller_icon,
+            'circle': controller_circle,
+            'level': controller_level,
+            'revealer': controller_revealer,
+            'button': controller_button
+        }
+        
+        self.controller_widgets[path] = widget_data
+        self.hover_counters[path] = 0
+
+        # Connect hover events
+        controller_button.connect("enter-notify-event", lambda w, e, p=path: self._on_mouse_enter(w, e, p))
+        controller_button.connect("leave-notify-event", lambda w, e, p=path: self._on_mouse_leave(w, e, p))
+
+        # Add to container
+        self.add(main_revealer)
+        
+        # Update the widget with current data
+        self._update_controller_widget(path, controller_data)
+        
+        # Animate in after a brief delay
+        GLib.timeout_add(50, lambda: self._animate_widget_in(path))
+
+    def _update_controller_widget(self, path, controller_data):
+        """Update an existing controller widget with new data"""
+        if path not in self.controller_widgets:
+            return
+            
+        widget = self.controller_widgets[path]
+        percentage = int(controller_data['percentage'])
+        charging = controller_data['charging']
+        time_remaining = controller_data.get('time', 0)
+        model = controller_data.get('model', 'Controller')
+
+        # Update circle progress and percentage
+        widget['circle'].set_value(controller_data['percentage'] / 100.0)
+        widget['level'].set_label(f"{percentage}%")
+
+        # Update icon based on battery level and charging status
+        if percentage <= 15:
+            widget['icon'].add_style_class("alert")
+            widget['circle'].add_style_class("alert")
+            widget['level'].add_style_class("alert")
+        else:
+            widget['icon'].remove_style_class("alert")
+            widget['circle'].remove_style_class("alert")
+            widget['level'].remove_style_class("alert")
+
+        # Format time remaining
+        if time_remaining < 60:
+            time_status = f"{int(time_remaining)}sec"
+        elif time_remaining < 60 * 60:
+            time_status = f"{int(time_remaining / 60)}min"
+        else:
+            time_status = f"{int(time_remaining / 60 / 60)}h"
+
+        # Create tooltip based on status
+        if percentage == 100 and not charging:
+            status = f"{icons.controller} {model} - Fully Charged"
+        elif percentage == 100 and charging:
+            status = f"{icons.controller} {model} - Fully Charged"
+        elif charging:
+            status = f"{icons.controller} {model} - Charging ({time_status} left)"
+        elif percentage <= 15:
+            status = f"{icons.controller} {model} - Low Battery ({time_status} left)"
+        else:
+            status = f"{icons.controller} {model} - {percentage}% ({time_status} left)"
+
+        widget['button'].set_tooltip_markup(status if not data.VERTICAL else f"{status}: {percentage}%")
+
+    def _on_mouse_enter(self, widget, event, path):
+        """Handle mouse enter for controller widget"""
+        if not data.VERTICAL and path in self.controller_widgets:
+            self.hover_counters[path] += 1
+            if path in self.hide_timers:
+                GLib.source_remove(self.hide_timers[path])
+                del self.hide_timers[path]
+
+            self.controller_widgets[path]['revealer'].set_reveal_child(True)
+
+    def _on_mouse_leave(self, widget, event, path):
+        """Handle mouse leave for controller widget"""
+        if not data.VERTICAL and path in self.controller_widgets:
+            if self.hover_counters[path] > 0:
+                self.hover_counters[path] -= 1
+            if self.hover_counters[path] == 0:
+                if path in self.hide_timers:
+                    GLib.source_remove(self.hide_timers[path])
+                self.hide_timers[path] = GLib.timeout_add(500, lambda p=path: self._hide_revealer(p))
+
+    def _hide_revealer(self, path):
+        """Hide the revealer for a specific controller"""
+        if not data.VERTICAL and path in self.controller_widgets:
+            self.controller_widgets[path]['revealer'].set_reveal_child(False)
+            if path in self.hide_timers:
+                del self.hide_timers[path]
+        return False
+
+    def _animate_widget_in(self, path):
+        """Animate the widget in"""
+        if path in self.controller_widgets:
+            self.controller_widgets[path]['main_revealer'].set_reveal_child(True)
+        return False
+
+    def _animate_widget_out(self, path, callback):
+        """Animate the widget out and then call callback"""
+        if path in self.controller_widgets:
+            self.controller_widgets[path]['main_revealer'].set_reveal_child(False)
+            # Wait for animation to complete before removing
+            GLib.timeout_add(350, callback)  # 350ms = 300ms animation + 50ms buffer
+        else:
+            callback()
 
 class NetworkApplet(Button):
     def __init__(self, **kwargs):

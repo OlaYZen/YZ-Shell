@@ -5,7 +5,7 @@ import gi
 
 gi.require_version("Gtk", "3.0")
 from fabric.utils.helpers import get_relative_path
-from gi.repository import Gdk, GLib
+from gi.repository import Gdk, GLib  # type: ignore
 
 APP_NAME = "yz-shell"
 APP_NAME_CAP = "YZ-Shell"
@@ -88,6 +88,7 @@ if os.path.exists(CONFIG_FILE):
         'ws_container': config.get('bar_ws_container_visible', True),
         'weather': config.get('bar_weather_visible', True),
         'battery': config.get('bar_battery_visible', True),
+        'controller_battery': config.get('bar_controller_battery_visible', True),
         'metrics': config.get('bar_metrics_visible', True),
         'language': config.get('bar_language_visible', True),
         'date_time': config.get('bar_date_time_visible', True),
@@ -132,6 +133,7 @@ else:
         'ws_container': True,
         'weather': True,
         'battery': True,
+        'controller_battery': True,
         'metrics': True,
         'language': True,
         'date_time': True,

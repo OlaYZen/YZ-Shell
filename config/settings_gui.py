@@ -417,7 +417,7 @@ class HyprConfGUI(Window):
             'button_apps': "App Launcher Button", 'systray': "System Tray", 'control': "Control Panel",
             'network': "Network Applet", 'button_tools': "Toolbox Button", 'button_overview': "Overview Button",
             'ws_container': "Workspaces", 'weather': "Weather Widget", 'battery': "Battery Indicator",
-            'metrics': "System Metrics", 'language': "Language Indicator", 'date_time': "Date & Time",
+            'controller_battery': "Controller Battery", 'metrics': "System Metrics", 'language': "Language Indicator", 'date_time': "Date & Time",
             'button_power': "Power Button",
         }
 
