@@ -1,4 +1,8 @@
-# 🚀 YZ-Shell: Advanced Hyprland Desktop Shell
+<p align="center">
+<a href="https://github.com/Axenide/Ax-Shell">
+  <img src="assets/cover.png">
+  </a>
+</p>
 
 <h2><sub><img src="https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/master/Emojis/Objects/Camera%20with%20Flash.png" alt="Camera with Flash" width="25" height="25" /></sub> Screenshots</h2>
 <table align="center">
@@ -363,41 +367,14 @@ This fork includes several enhancements and improvements over the original Ax-Sh
 
 ## ⚙️ Installation
 
-### **Automatic Installation (Arch Linux)**
+> [!TIP]
+> This command also works for updating an existing installation!
+
+
 ```bash
 curl -fsSL https://raw.githubusercontent.com/OlaYZen/YZ-Shell/main/install.sh | bash
 ```
 
-### **Manual Installation**
-
-**Dependencies:**
-```bash
-# Core framework
-fabric-git fabric-cli gray matugen
-
-# System tools
-brightnessctl cava cliphist hypridle hyprlock hyprpicker 
-hyprshot hyprsunset grimblast gpu-screen-recorder imagemagick
-libnotify nvtop playerctl swappy swww tesseract tmux upower
-uwsm wl-clipboard wlinhibit
-
-# Desktop integration
-gnome-bluetooth-3.0 gobject-introspection vte3 webp-pixbuf-loader
-
-# Python packages
-python-pygobject python-ijson python-numpy python-pillow 
-python-psutil python-pywayland python-requests python-setproctitle
-python-toml python-watchdog
-
-# Fonts (automatic)
-noto-fonts-emoji ttf-zed-sans-mono-nerd
-```
-
-**Installation:**
-```bash
-git clone https://github.com/OlaYZen/YZ-Shell.git ~/.config/YZ-Shell
-uwsm -- app python ~/.config/YZ-Shell/main.py > /dev/null 2>&1 & disown
-```
 
 ## 📖 Usage Guide
 
