@@ -1,6 +1,7 @@
 {
-	"version": "0.0.16",
+	"version": "0.0.18",
+  "pkg_update": false,
 	"changelog": [
-    "<b>feat:</b> Added 12 hours format for time display. Check Appearance settings."
+    "<b>tweak:</b> Only update packages when necessary."
 	]
 }
