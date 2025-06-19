@@ -459,6 +459,27 @@ class HyprConfGUI(Window):
             components_grid.attach(switch_container, col + 1, row, 1, 1)
             self.component_switches[name] = component_switch
             item_idx +=1
+
+        separator3 = Box(style="min-height: 1px; background-color: alpha(@fg_color, 0.2); margin: 5px 0px;", h_expand=True)
+        vbox.add(separator3)
+
+        # Media Player section
+        media_header = Label(markup="<b>Media Player</b>", h_align="start")
+        vbox.add(media_header)
+        media_grid = Gtk.Grid()
+        media_grid.set_column_spacing(20)
+        media_grid.set_row_spacing(10)
+        media_grid.set_margin_start(10)
+        media_grid.set_margin_top(5)
+        vbox.add(media_grid)
+
+        spinning_label = Label(label="Cover Art Spinning Animation", h_align="start", v_align="center")
+        media_grid.attach(spinning_label, 0, 0, 1, 1)
+        spinning_switch_container = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, halign=Gtk.Align.START, valign=Gtk.Align.CENTER)
+        self.spinning_switch = Gtk.Switch(active=bind_vars.get('player_cover_spinning', True))
+        self.spinning_switch.set_tooltip_text("Enable spinning animation for music cover art when playing")
+        spinning_switch_container.add(self.spinning_switch)
+        media_grid.attach(spinning_switch_container, 1, 0, 1, 1)
         
         self._update_panel_position_sensitivity()
         return scrolled_window
@@ -792,6 +813,8 @@ class HyprConfGUI(Window):
         # Remove old ical_urls key to avoid confusion
         if 'ical_urls' in current_bind_vars_snapshot:
             del current_bind_vars_snapshot['ical_urls']
+        
+        current_bind_vars_snapshot['player_cover_spinning'] = self.spinning_switch.get_active()
 
 
         selected_icon_path = self.selected_face_icon
@@ -1012,6 +1035,8 @@ class HyprConfGUI(Window):
             
             for source in DEFAULTS.get('ical_sources', []):
                 self._add_ical_source_widget(source)
+
+            self.spinning_switch.set_active(DEFAULTS.get('player_cover_spinning', True))
 
             self._update_panel_position_sensitivity()
 

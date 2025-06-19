@@ -93,5 +93,6 @@ DEFAULTS = {
         'disk': True,
         'gpu': True,
     },
-    'ical_sources': [],  # List of iCal sources with URLs and colors: [{'url': 'http://...', 'color': '#FF0000', 'name': 'My Calendar'}, ...]
+    'ical_sources': [],
+    'player_cover_spinning': True,
 }

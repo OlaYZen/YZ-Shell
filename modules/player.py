@@ -306,13 +306,15 @@ class PlayerBox(Box):
         if self.mpris_player.playback_status == "playing":
             self.play_pause.get_child().set_markup(icons.pause)
             self.play_pause.add_style_class("playing")
-            self.cover.add_style_class("spinning")
-            self._start_spinning()
+            if getattr(data, 'PLAYER_COVER_SPINNING', True):
+                self.cover.add_style_class("spinning")
+                self._start_spinning()
         else:
             self.play_pause.get_child().set_markup(icons.play)
             self.play_pause.remove_style_class("playing")
-            self.cover.remove_style_class("spinning")
-            self._stop_spinning()
+            if getattr(data, 'PLAYER_COVER_SPINNING', True):
+                self.cover.remove_style_class("spinning")
+                self._stop_spinning()
 
     def _start_spinning(self):
         """Start the spinning animation for the cover image"""

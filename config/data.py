@@ -105,6 +105,7 @@ if os.path.exists(CONFIG_FILE):
     old_urls = config.get('ical_urls', [])
     if old_urls and not ICAL_SOURCES:
         ICAL_SOURCES = [{'url': url, 'color': '#007acc', 'name': f'Calendar {i+1}'} for i, url in enumerate(old_urls)]
+    PLAYER_COVER_SPINNING = config.get('player_cover_spinning', True)
 else:
     WALLPAPERS_DIR = WALLPAPERS_DIR_DEFAULT
     BAR_POSITION = "Top"
@@ -147,3 +148,4 @@ else:
     METRICS_VISIBLE = {'cpu': True, 'ram': True, 'disk': True, 'gpu': True}
     METRICS_SMALL_VISIBLE = {'cpu': True, 'ram': True, 'disk': True, 'gpu': True}
     ICAL_SOURCES = []
+    PLAYER_COVER_SPINNING = True

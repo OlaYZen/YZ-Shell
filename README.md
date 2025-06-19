@@ -51,6 +51,7 @@ This fork includes several enhancements and improvements over the original Ax-Sh
 
 ### **🎵 Interactive Media Controls**
 - **Dynamic Playback Indicators**: Media artwork now features a rotation animation during playback and stops when paused or idle, creating a vinyl record effect that provides visual feedback for media state
+- **Toggleable**: Cover art spinning can be enabled/disabled in settings (enabled by default)
 
 ### **🌤️ Extended Weather Dashboard**
 - **3-Day Weather Forecast**: Dashboard now includes upcoming weather information displaying current day plus the next 2 days with temperature and condition previews, featuring current conditions and 4 daily time periods (midnight, morning, noon, evening)
