@@ -110,6 +110,9 @@ This fork includes several enhancements and improvements over the original Ax-Sh
 - **Multiple Controller Support**: Simultaneously monitor multiple connected controllers with individual widgets
 - **Visual Indicators**: Low battery alerts (≤15%) with red styling and detailed tooltips showing model, charge level, and time remaining
 
+### **🖱️ Enhanced Dock Interaction**
+- **Right-Click Context Menu**: Pin/unpin apps and close running instances with context-aware menu options
+
 ## 📊 Complete Feature List
 
 ### **🚀 Application Management**
