@@ -648,9 +648,9 @@ VPN/
 - [x] Tmux Session Manager
 - [x] Update checker
 - [x] Vertical Layout
+- [x] VPN (WireGuard configs)
 - [x] Wallpaper Selector
 - [x] Workspaces Overview
-- [x] VPN (WireGuard configs)
 - [ ] Multi-monitor support
 - [ ] Multimodal AI Assistant
 - [ ] OSD
