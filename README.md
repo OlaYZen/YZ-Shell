@@ -26,21 +26,36 @@
   </a>
 </p>
 
-> ## ⚠️ **DISCLAIMER** ⚠️
-> 
-> **YZ-Shell is designed specifically for Arch Linux and requires AUR packages and Arch-specific configurations.**
->
-> ✅ **SUPPORTED:**
+## ⚠️ **DISCLAIMER** ⚠️
+ 
+**YZ-Shell is designed specifically for Arch Linux and requires AUR packages and Arch-specific configurations.**
+
+> [!NOTE]
+> **SUPPORTED:**
 > - Arch Linux
 > - Arch-based distributions (Manjaro, EndeavourOS, etc.)
-> 
-> 🚫 **NOT COMPATIBLE WITH:**
+
+> [!CAUTION]
+> **NOT COMPATIBLE WITH:**
 > - NixOS
 > - Other Linux distributions
 
 A feature-rich, modular desktop shell for Hyprland with comprehensive functionality including application management, system monitoring, productivity tools, and seamless desktop integration.
 
-> **Note**: This is a fork of [Ax-Shell](https://github.com/Axenide/Ax-Shell) with additional features and enhancements.
+> [!NOTE]
+> This is a fork of [Ax-Shell](https://github.com/Axenide/Ax-Shell) with additional features and enhancements.
+
+---
+
+> [!TIP]
+> **Font Recommendation**
+>
+> **[Adwaita Sans Regular](https://gitlab.gnome.org/GNOME/adwaita-fonts)** as your [gsettings](https://man.archlinux.org/man/gsettings.1.en) font because I designed YZ-Shell's interface around this font
+
+> [!NOTE]
+> Using other fonts may cause iCal events to display incorrectly (too small or too large)
+
+
 
 ## 🔄 Fork Enhancements
 
@@ -666,4 +681,5 @@ If you find Ax-Shell useful, please consider supporting the **original project c
   </a>
 </p>
 
-> **Note**: This is a fork with additional features. Please support [Axenide](https://github.com/Axenide), the original creator of Ax-Shell.
+> [!Note]
+> This is a fork with additional features. Please support [Axenide](https://github.com/Axenide), the original creator of Ax-Shell.
