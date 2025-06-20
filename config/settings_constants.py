@@ -95,4 +95,5 @@ DEFAULTS = {
     },
     'ical_sources': [],
     'player_cover_spinning': True,
+    'settings_window_resizable': False,
 }

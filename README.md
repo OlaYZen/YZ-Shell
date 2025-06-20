@@ -93,6 +93,10 @@ This fork includes several improvements over the original Ax-Shell:
 ### **📊 Network Metrics**
 - **Speed Units**: Network speeds now display in industry-standard units (Mbps, Kbps, bps) instead of MB/s, with consistent bit-per-second (bps) notation across all network measurements
 
+### **⚙️ Settings Window**
+- **Resizable Window Option**: Settings window can now be made resizable through a toggle in the Layout Options 
+- **User Control**: Disabled by default, but can be enabled for users who prefer flexible window sizing
+
 ### **⏰ Time Display**
 - **Seconds Precision**: Time display in the pill bar now shows seconds (HH:MM:SS) for improved time awareness, upgrading the original format
 - **Toggleable**: Seconds can be enabled/disabled in settings

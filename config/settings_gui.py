@@ -35,7 +35,7 @@ class HyprConfGUI(Window):
             **kwargs,
         )
 
-        self.set_resizable(False)
+        self.set_resizable(bind_vars.get('settings_window_resizable', False))
 
         self.selected_face_icon = None
         self.show_lock_checkbox = show_lock_checkbox
@@ -214,7 +214,7 @@ class HyprConfGUI(Window):
         separator1 = Box(style="min-height: 1px; background-color: alpha(@fg_color, 0.2); margin: 5px 0px;", h_expand=True)
         vbox.add(separator1)
 
-        # START NEW SECTION FOR DATETIME FORMAT
+        # Date & Time section
         datetime_format_header = Label(markup="<b><span>Date &amp; Time Options</span></b>", h_align="start")
         vbox.add(datetime_format_header)
 
@@ -241,7 +241,27 @@ class HyprConfGUI(Window):
         self.datetime_show_seconds_switch = Gtk.Switch(active=bind_vars.get('datetime_show_seconds', True))
         datetime_show_seconds_switch_container.add(self.datetime_show_seconds_switch)
         datetime_grid.attach(datetime_show_seconds_switch_container, 3, 0, 1, 1)
-        # END NEW SECTION FOR DATETIME FORMAT
+
+        # Media Player section
+        media_header = Label(markup="<b>Media Player</b>", h_align="start")
+        vbox.add(media_header)
+        media_grid = Gtk.Grid()
+        media_grid.set_column_spacing(20)
+        media_grid.set_row_spacing(10)
+        media_grid.set_margin_start(10)
+        media_grid.set_margin_top(5)
+        vbox.add(media_grid)
+
+        spinning_label = Label(label="Cover Art Spinning Animation", h_align="start", v_align="center")
+        media_grid.attach(spinning_label, 0, 0, 1, 1)
+        spinning_switch_container = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, halign=Gtk.Align.START, valign=Gtk.Align.CENTER)
+        self.spinning_switch = Gtk.Switch(active=bind_vars.get('player_cover_spinning', True))
+        self.spinning_switch.set_tooltip_text("Enable spinning animation for music cover art when playing")
+        spinning_switch_container.add(self.spinning_switch)
+        media_grid.attach(spinning_switch_container, 1, 0, 1, 1)
+
+        separator_media = Box(style="min-height: 1px; background-color: alpha(@fg_color, 0.2); margin: 5px 0px;", h_expand=True)
+        vbox.add(separator_media)
 
         layout_header = Label(markup="<b>Layout Options</b>", h_align="start")
         vbox.add(layout_header)
@@ -408,6 +428,14 @@ class HyprConfGUI(Window):
         notification_pos_combo_container.add(self.notification_pos_combo)
         layout_grid.attach(notification_pos_combo_container, 1, 7, 3, 1)
 
+        resizable_label = Label(label="Resizable Settings Window (Reopen Required)", h_align="start", v_align="center")
+        layout_grid.attach(resizable_label, 0, 8, 1, 1)
+        resizable_switch_container = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, halign=Gtk.Align.START, valign=Gtk.Align.CENTER)
+        self.resizable_switch = Gtk.Switch(active=bind_vars.get('settings_window_resizable', False))
+        self.resizable_switch.set_tooltip_text("Allow the settings window to be resized (requires reopening settings window)")
+        resizable_switch_container.add(self.resizable_switch)
+        layout_grid.attach(resizable_switch_container, 1, 8, 3, 1)
+
         separator2 = Box(style="min-height: 1px; background-color: alpha(@fg_color, 0.2); margin: 5px 0px;", h_expand=True)
         vbox.add(separator2)
 
@@ -460,27 +488,6 @@ class HyprConfGUI(Window):
             self.component_switches[name] = component_switch
             item_idx +=1
 
-        separator3 = Box(style="min-height: 1px; background-color: alpha(@fg_color, 0.2); margin: 5px 0px;", h_expand=True)
-        vbox.add(separator3)
-
-        # Media Player section
-        media_header = Label(markup="<b>Media Player</b>", h_align="start")
-        vbox.add(media_header)
-        media_grid = Gtk.Grid()
-        media_grid.set_column_spacing(20)
-        media_grid.set_row_spacing(10)
-        media_grid.set_margin_start(10)
-        media_grid.set_margin_top(5)
-        vbox.add(media_grid)
-
-        spinning_label = Label(label="Cover Art Spinning Animation", h_align="start", v_align="center")
-        media_grid.attach(spinning_label, 0, 0, 1, 1)
-        spinning_switch_container = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, halign=Gtk.Align.START, valign=Gtk.Align.CENTER)
-        self.spinning_switch = Gtk.Switch(active=bind_vars.get('player_cover_spinning', True))
-        self.spinning_switch.set_tooltip_text("Enable spinning animation for music cover art when playing")
-        spinning_switch_container.add(self.spinning_switch)
-        media_grid.attach(spinning_switch_container, 1, 0, 1, 1)
-        
         self._update_panel_position_sensitivity()
         return scrolled_window
 
@@ -815,6 +822,7 @@ class HyprConfGUI(Window):
             del current_bind_vars_snapshot['ical_urls']
         
         current_bind_vars_snapshot['player_cover_spinning'] = self.spinning_switch.get_active()
+        current_bind_vars_snapshot['settings_window_resizable'] = self.resizable_switch.get_active()
 
 
         selected_icon_path = self.selected_face_icon
@@ -1037,6 +1045,7 @@ class HyprConfGUI(Window):
                 self._add_ical_source_widget(source)
 
             self.spinning_switch.set_active(DEFAULTS.get('player_cover_spinning', True))
+            self.resizable_switch.set_active(DEFAULTS.get('settings_window_resizable', False))
 
             self._update_panel_position_sensitivity()
 
