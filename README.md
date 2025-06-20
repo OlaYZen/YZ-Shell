@@ -95,6 +95,7 @@ This fork includes several improvements over the original Ax-Shell:
 
 ### **⏰ Time Display**
 - **Seconds Precision**: Time display in the pill bar now shows seconds (HH:MM:SS) for improved time awareness, upgrading the original format
+- **Toggleable**: Seconds can be enabled/disabled in settings
 
 ### **🛡️ VPN Management Integration**
 - **WireGuard VPN Support**: Manage WireGuard VPN connections directly from the shell with full configuration management
