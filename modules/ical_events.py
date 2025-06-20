@@ -122,10 +122,7 @@ class ICalEventManager:
         try:
             new_event_dates = {}
 
-            now = datetime.now()
-            start_date = now.date() - timedelta(days=730)  # 2 years ago
-            end_date = now.date() + timedelta(days=730)    # 2 years from now
-            print(f"iCal: Using date range {start_date} to {end_date} for all sources")
+            print(f"iCal: Processing all events from all sources without date restrictions")
 
             def to_iso(dt):
                 if isinstance(dt, datetime):
@@ -149,7 +146,7 @@ class ICalEventManager:
                     print(f"iCal: Successfully fetched {len(response.content)} bytes from {source_name}")
 
                     cal = Calendar.from_ical(response.content)
-                    print(f"iCal: Processing events from {source_name} between {start_date} and {end_date}")
+                    print(f"iCal: Processing all events from {source_name}")
 
                     events_found = 0
 
@@ -216,14 +213,13 @@ class ICalEventManager:
                                 last_day = occ_end.date() if occ_end else current_day
 
                             while current_day <= last_day:
-                                if start_date <= current_day <= end_date:
-                                    if current_day not in new_event_dates:
-                                        new_event_dates[current_day] = []
-                                    new_event_dates[current_day].append(event_info)
+                                if current_day not in new_event_dates:
+                                    new_event_dates[current_day] = []
+                                new_event_dates[current_day].append(event_info)
                                 current_day += timedelta(days=1)
 
                         if rrule_prop:
-                            # Recurring event: expand occurrences within date range
+                            # Recurring event: expand occurrences
                             # Build RRULE string with DTSTART
                             dtstart_for_rrule = event_start
                             if all_day and isinstance(dtstart_for_rrule, date) and not isinstance(dtstart_for_rrule, datetime):
@@ -235,11 +231,20 @@ class ICalEventManager:
 
                             try:
                                 rule = rrulestr(rrule_text, forceset=True, compatible=True)
+                                # Get all occurrences up to a reasonable limit to prevent infinite loops
+                                # Use a far future date as upper bound (e.g., year 2100)
+                                far_future = datetime(2100, 12, 31, 23, 59, 59)
                                 occurrences = rule.between(
-                                    datetime.combine(start_date, time.min),
-                                    datetime.combine(end_date, time.max),
+                                    datetime(1900, 1, 1),  # Far past
+                                    far_future,
                                     inc=True
                                 )
+                                
+                                # Limit to prevent excessive memory usage (max 10000 occurrences)
+                                if len(occurrences) > 10000:
+                                    print(f"Warning: Event '{summary}' has {len(occurrences)} occurrences, limiting to first 10000")
+                                    occurrences = occurrences[:10000]
+                                
                                 for occ in occurrences:
                                     if all_day:
                                         occ_date = occ.date()
@@ -250,34 +255,31 @@ class ICalEventManager:
                             except Exception as e:
                                 print(f"Error expanding RRULE for event '{summary}' in {source_name}: {e}")
                         else:
-                            # Non-recurring event: add single occurrence if in range
+                            # Non-recurring event: add single occurrence
                             if all_day:
                                 event_start_date = event_start
                                 event_end_date = event_end if event_end else event_start_date
                                 # Add event for all days spanned
                                 current_day = event_start_date
                                 while current_day <= event_end_date:
-                                    if start_date <= current_day <= end_date:
-                                        if current_day not in new_event_dates:
-                                            new_event_dates[current_day] = []
-                                        event_info = {
-                                            'title': summary,
-                                            'description': description,
-                                            'color': color,
-                                            'source': source_name,
-                                            'start': to_iso(event_start),
-                                            'end': to_iso(event_end),
-                                            'all_day': all_day,
-                                            'location': location
-                                        }
-                                        new_event_dates[current_day].append(event_info)
-                                        events_found += 1
+                                    if current_day not in new_event_dates:
+                                        new_event_dates[current_day] = []
+                                    event_info = {
+                                        'title': summary,
+                                        'description': description,
+                                        'color': color,
+                                        'source': source_name,
+                                        'start': to_iso(event_start),
+                                        'end': to_iso(event_end),
+                                        'all_day': all_day,
+                                        'location': location
+                                    }
+                                    new_event_dates[current_day].append(event_info)
+                                    events_found += 1
                                     current_day += timedelta(days=1)
                             else:
-                                event_start_date = event_start.date()
-                                if start_date <= event_start_date <= end_date:
-                                    add_event_occurrence(event_start)
-                                    events_found += 1
+                                add_event_occurrence(event_start)
+                                events_found += 1
 
                     print(f"iCal: Found {events_found} events from {source_name}")
 
@@ -291,7 +293,6 @@ class ICalEventManager:
 
             print(f"Updated calendar events: {len(self.event_dates)} days with events")
 
-            from gi.repository import GLib
             GLib.idle_add(self._notify_listeners)
 
         except Exception as e:
