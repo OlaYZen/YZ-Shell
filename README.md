@@ -651,7 +651,6 @@ VPN/
 - [x] Wallpaper Selector
 - [x] Workspaces Overview
 - [x] VPN (WireGuard configs)
-- [ ] Live Notifications (Similar to OneUi 7)
 - [ ] Multi-monitor support
 - [ ] Multimodal AI Assistant
 - [ ] OSD
