@@ -42,6 +42,8 @@ class AppLauncher(Box):
         self._arranger_handler: int = 0
         self._all_apps = get_desktop_applications()
 
+        # Load application search aliases
+        self.search_aliases = self.load_search_aliases()
 
         self.converter = Conversion()
         self.calc_history_path = f"{data.CACHE_DIR}/calc.json"
@@ -119,6 +121,72 @@ class AppLauncher(Box):
         self.add(self.launcher_box)
         self.show_all()
 
+    def load_search_aliases(self):
+        """Load application search aliases from JSON configuration file"""
+        aliases_path = get_relative_path("../config/search_aliases.json")
+        try:
+            with open(aliases_path, "r") as f:
+                return json.load(f)
+        except (FileNotFoundError, json.JSONDecodeError) as e:
+            print(f"Warning: Could not load search aliases from {aliases_path}: {e}")
+            # Return default aliases as fallback
+            return {
+                "application_aliases": [
+                    {
+                        "app_names": ["vesktop"],
+                        "search_terms": ["discord"]
+                    }
+                ]
+            }
+
+    def generate_progressive_terms(self, term):
+        """Generate progressive character sequences for a search term"""
+        # Generate progressive sequences: "internet" -> ["i", "in", "int", "inte", "inter", "intern", "interne", "internet"]
+        sequences = []
+        for i in range(1, len(term) + 1):
+            sequences.append(term[:i])
+        return sequences
+
+    def should_app_match_query(self, app: DesktopApp, query: str) -> bool:
+        """Check if an app should match the search query, including special cases from JSON config"""
+        query_lower = query.casefold()
+        
+        # Standard search fields
+        searchable_text = (
+            (app.display_name or "")
+            + (" " + app.name + " ")
+            + (app.generic_name or "")
+        ).casefold()
+        
+        # Check normal search match
+        if query_lower in searchable_text:
+            return True
+        
+        # Check aliases from JSON configuration
+        app_name_lower = (app.display_name or "").casefold()
+        app_exec_lower = (app.name or "").casefold()
+        
+        for alias_config in self.search_aliases.get("application_aliases", []):
+            app_names = [name.casefold() for name in alias_config.get("app_names", [])]
+            base_search_terms = [term.casefold() for term in alias_config.get("search_terms", [])]
+            
+            # Generate progressive sequences for each base search term
+            all_search_terms = []
+            for base_term in base_search_terms:
+                all_search_terms.extend(self.generate_progressive_terms(base_term))
+            
+            # Check if current app matches any of the configured app names
+            app_matches = any(
+                app_name in app_name_lower or app_name in app_exec_lower 
+                for app_name in app_names
+            )
+            
+            # If app matches and query is in search terms, return True
+            if app_matches and query_lower in all_search_terms:
+                return True
+        
+        return False
+
     def close_launcher(self):
         self.viewport.children = []
         self.selected_index = -1
@@ -168,12 +236,7 @@ class AppLauncher(Box):
                 [
                     app
                     for app in self._all_apps
-                    if query.casefold()
-                    in (
-                        (app.display_name or "")
-                        + (" " + app.name + " ")
-                        + (app.generic_name or "")
-                    ).casefold()
+                    if self.should_app_match_query(app, query)
                 ],
                 key=lambda app: (app.display_name or "").casefold(),
             )

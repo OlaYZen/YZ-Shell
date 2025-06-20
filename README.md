@@ -95,6 +95,15 @@ This fork includes several enhancements and improvements over the original Ax-Sh
 - **Smart Network Handling**: Automatic detection of saved networks with priority connection attempts
 - **Enhanced Visual Feedback**: Clear network status with security indicators and connection progress
 
+### **🔍 Smart Application Search**
+- **Progressive Character Matching**: Type partial words to find applications instantly - typing `d` shows Vesktop through Discord association
+- **Intelligent Alias System**: Applications can be found using alternative search terms beyond their actual names
+- **Automatic Sequence Generation**: Each search term automatically creates progressive character sequences (e.g., "discord" → "d", "di", "dis", "disc", etc.)
+- **JSON-Based Configuration**: Easily customizable via `config/search_aliases.json` without touching code
+- **Multiple Application Support**: Single search terms can reveal multiple related applications simultaneously
+- **Enhanced User Experience**: Find applications faster with intuitive search patterns and abbreviated typing
+- **[📖 Configuration Example](#application-search-aliases-configuration)**: See detailed setup instructions and practical examples below
+
 ### **🛡️ VPN Management Integration**
 - **WireGuard VPN Support**: Manage WireGuard VPN connections directly from the shell with full configuration management
 - **Subfolder Organization**: Support for organizing VPN configurations in subdirectories (e.g., `VPN/work/office.conf`, `VPN/personal/home.conf`)
@@ -527,6 +536,30 @@ All bar components can be individually toggled:
 - **Dock Themes**: Pills, Panel, Transparent
 - **Panel Themes**: Notch, Panel, Overlay
 - **Adaptive Colors**: Automatic theme generation from wallpapers
+
+### **Application Search Aliases Configuration**
+The Smart Application Search system allows you to create custom search shortcuts for applications. Edit `~/.config/YZ-Shell/config/search_aliases.json` to add your own aliases:
+
+```json
+{
+  "application_aliases": [
+    {
+      "app_names": ["vesktop"],
+      "search_terms": ["discord"]
+    },
+    {
+      "app_names": ["zen browser"],
+      "search_terms": ["web", "browser", "www", "internet"]
+    }
+  ]
+}
+```
+
+**Configuration Options:**
+- **`app_names`**: List of application names to match (case-insensitive, partial matches supported)
+- **`search_terms`**: List of base search terms that automatically generate progressive sequences
+- **Progressive Matching**: Each term automatically creates sequences (e.g., "internet" → "i", "in", "int", "inte", "inter", "intern", "interne", "internet")
+- **Multiple Apps**: Multiple applications can share the same search terms
 
 ### **VPN Configuration**
 Place your WireGuard `.conf` files in `~/.config/YZ-Shell/VPN/` with full subfolder support:
