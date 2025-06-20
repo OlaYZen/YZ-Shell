@@ -44,84 +44,82 @@ A feature-rich, modular desktop shell for Hyprland with comprehensive functional
 
 ## 🔄 Fork Enhancements
 
-This fork includes several enhancements and improvements over the original Ax-Shell:
+This fork includes several improvements over the original Ax-Shell:
 
-### **⏰ Enhanced Time Display**
-- **Seconds Precision**: Time display in the pill bar now shows seconds (HH:MM:SS) for improved time awareness, upgrading the original format
+### **🔍 Application Search**
+- **Character Matching**: Type partial words to find applications instantly - typing `d` shows Vesktop through Discord association
+- **Alias System**: Applications can be found using alternative search terms beyond their actual names
+- **Sequence Generation**: Each search term creates character sequences (e.g., "discord" → "d", "di", "dis", "disc", etc.)
+- **JSON Configuration**: Customizable via `config/search_aliases.json` without touching code
+- **Multiple Application Support**: Single search terms can reveal multiple related applications simultaneously
+- **[📖 Configuration Example](#application-search-aliases-configuration)**: See detailed setup instructions and practical examples below
 
-### **🎵 Interactive Media Controls**
-- **Dynamic Playback Indicators**: Media artwork now features a rotation animation during playback and stops when paused or idle, creating a vinyl record effect that provides visual feedback for media state
+### **🔵 Bluetooth Management**
+- **Hardware Detection**: Bluetooth hardware detection using multiple system checks (bluetoothctl, rfkill, hciconfig, sysfs, systemctl)
+- **Hardware Monitoring**: Periodic hardware checks (every 60 seconds) to detect USB Bluetooth adapters being plugged/unplugged
+- **Hardware Handling**: Proper UI states when no Bluetooth hardware is detected, with clear "No Bluetooth Hardware" messaging
+- **Error Recovery**: Fallback mechanisms for hardware detection and connection handling
+
+### **📅 Calendar with iCal Events**
+- **Clickable Event Dates**: Calendar dates with iCal events are now clickable to display event details in the applet tray
+- **Event Indicators**: Colored dots on calendar days indicate events, with different colors for different iCal sources
+- **Multi-Source Support**: Support for multiple iCal calendars with customizable colors and names per source
+- **Event Details Display**: Event information including title, time, description, and source calendar
+- **Navigation**: Empty days serve as navigation buttons to return to notifications from any applet
+
+### **🎮 Controller Battery Monitoring**
+- **Controller Detection**: Uses UPower to detect wireless gaming controllers with batteries (Xbox, PlayStation, Nintendo, etc.)
+- **Battery Status**: Live battery percentage display with circular progress indicators next to main battery
+- **Multiple Controller Support**: Simultaneously monitor multiple connected controllers with individual widgets
+- **Low Battery Alerts**: Alerts (≤15%) with red styling and detailed tooltips showing model, charge level, and time remaining
+
+### **📅 Date Display**
+- **Multi-Format Switching**: Clock widget supports switching between multiple formats via mouse clicks - left click toggles time/European date (DD/MM/YYYY), right click for American format (MM-DD-YYYY), and middle click for ISO format (YYYY.MM.DD)
+
+### **🖱️ Dock Interaction**
+- **Right-Click Context Menu**: Pin/unpin apps and close running instances with context-aware menu options
+
+### **🎵 Media Controls**
+- **Playback Indicators**: Media artwork features a rotation animation during playback and stops when paused or idle, creating a vinyl record effect that provides visual feedback for media state
 - **Toggleable**: Cover art spinning can be enabled/disabled in settings (enabled by default)
 
-### **🌤️ Extended Weather Dashboard**
-- **3-Day Weather Forecast**: Dashboard now includes upcoming weather information displaying current day plus the next 2 days with temperature and condition previews, featuring current conditions and 4 daily time periods (midnight, morning, noon, evening)
-- **Interactive Weather Access**: Weather pill in the bar is now clickable for direct access
-- **Automatic Updates**: Weather information refreshes every 10 minutes to ensure current data
+### **📡 Network Management**
+- **WiFi Connection**: Detection and prioritization of saved networks with one-click reconnection
+- **Network Authentication**: In-dashboard password prompt for protected WiFi networks with show/hide password functionality  
+- **Hardware Detection**: WiFi hardware detection with graceful fallback when no hardware is available
+- **Network Indicators**: Network status indicators with saved network stars (⭐) and security locks (🔒)
+- **Network Grouping**: Grouping of access points by SSID, showing strongest signal for each network
 
-### **📊 Improved Network Metrics**
-- **Standardized Speed Units**: Network speeds now display in industry-standard units (Mbps, Kbps, bps) instead of MB/s, with consistent bit-per-second (bps) notation across all network measurements
+### **📊 Network Metrics**
+- **Speed Units**: Network speeds now display in industry-standard units (Mbps, Kbps, bps) instead of MB/s, with consistent bit-per-second (bps) notation across all network measurements
 
-### **🌐 Enhanced Weather Service**
-- **Better Weather API**: Switched from wttr.in to the Yr/Met.no weather API (run by the Norwegian Meteorological Institute) for more reliable and accurate weather data. **Fun Fact**: Jeremy Clarkson uses Yr for weather forecasts on his farm
-
-### **📅 Interactive Date Display**
-- **Multi-Format Date Switching**: Clock widget now supports instant switching between multiple formats via mouse clicks - left click toggles time/European date (DD/MM/YYYY), right click for American format (MM-DD-YYYY), and middle click for ISO format (YYYY.MM.DD), providing quick access to different date conventions
-
-### **📡 Enhanced Network Management**
-- **Smart WiFi Connection**: Automatic detection and prioritization of saved networks with one-click reconnection
-- **Secure Network Authentication**: In-dashboard password prompt for protected WiFi networks with show/hide password functionality  
-- **Network Hardware Detection**: Robust WiFi hardware detection with graceful fallback when no hardware is available
-- **Visual Network Indicators**: Enhanced network status indicators with saved network stars (⭐) and security locks (🔒)
-- **Network Grouping**: Intelligent grouping of access points by SSID, showing strongest signal for each network
-
-### **🔵 Enhanced Bluetooth Management**
-- **Multi-Level Hardware Detection**: Comprehensive Bluetooth hardware detection using multiple system checks (bluetoothctl, rfkill, hciconfig, sysfs, systemctl)
-- **Dynamic Hardware Monitoring**: Periodic hardware checks (every 60 seconds) to detect USB Bluetooth adapters being plugged/unplugged
-- **Graceful Hardware Handling**: Proper UI states when no Bluetooth hardware is detected, with clear "No Bluetooth Hardware" messaging
-- **Robust Error Recovery**: Fallback mechanisms for hardware detection and connection handling
-
-### **📅 Interactive Calendar with iCal Events**
-- **Clickable Event Dates**: Calendar dates with iCal events are now clickable to display event details in the applet tray
-- **Visual Event Indicators**: Colored dots on calendar days indicate events, with different colors for different iCal sources
-- **Multi-Source Support**: Support for multiple iCal calendars with customizable colors and names per source
-- **Event Details Display**: Comprehensive event information including title, time, description, and source calendar
-- **Universal Navigation**: Empty days serve as navigation buttons to return to notifications from any applet
-- **GTK3 Compatible**: Full GTK3 widget implementation ensuring compatibility and consistent styling
-
-### **🔐 Enhanced WiFi Security Interface**
-- **In-Dashboard Password Prompt**: Seamless password entry for secured WiFi networks without leaving the main interface
-- **Consistent UI Design**: Password prompt matches calendar width and styling for visual consistency
-- **Show/Hide Password**: Toggle password visibility with intuitive eye icon button
-- **Smart Network Handling**: Automatic detection of saved networks with priority connection attempts
-- **Enhanced Visual Feedback**: Clear network status with security indicators and connection progress
-
-### **🔍 Smart Application Search**
-- **Progressive Character Matching**: Type partial words to find applications instantly - typing `d` shows Vesktop through Discord association
-- **Intelligent Alias System**: Applications can be found using alternative search terms beyond their actual names
-- **Automatic Sequence Generation**: Each search term automatically creates progressive character sequences (e.g., "discord" → "d", "di", "dis", "disc", etc.)
-- **JSON-Based Configuration**: Easily customizable via `config/search_aliases.json` without touching code
-- **Multiple Application Support**: Single search terms can reveal multiple related applications simultaneously
-- **Enhanced User Experience**: Find applications faster with intuitive search patterns and abbreviated typing
-- **[📖 Configuration Example](#application-search-aliases-configuration)**: See detailed setup instructions and practical examples below
+### **⏰ Time Display**
+- **Seconds Precision**: Time display in the pill bar now shows seconds (HH:MM:SS) for improved time awareness, upgrading the original format
 
 ### **🛡️ VPN Management Integration**
 - **WireGuard VPN Support**: Manage WireGuard VPN connections directly from the shell with full configuration management
 - **Subfolder Organization**: Support for organizing VPN configurations in subdirectories (e.g., `VPN/work/office.conf`, `VPN/personal/home.conf`)
-- **Recursive Configuration Discovery**: Automatically scans all subfolders for .conf files, allowing unlimited organizational depth
-- **Smart Path Display**: Shows folder structure in VPN names for easy identification while maintaining compatibility with WireGuard interface names
-- **Secure Password Prompt**: In-dashboard sudo password prompt for VPN connect/disconnect actions with password visibility toggle
+- **Configuration Discovery**: Scans all subfolders for .conf files, allowing unlimited organizational depth
+- **Path Display**: Shows folder structure in VPN names for easy identification while maintaining compatibility with WireGuard interface names
+- **Password Prompt**: In-dashboard sudo password prompt for VPN connect/disconnect actions with password visibility toggle
 - **Connection Status Indicators**: Visual feedback for active and previous VPN connections with clear status messages
-- **Seamless VPN Switching**: Single password prompt for disconnecting current and connecting to new VPN
-- **Previous VPN Memory**: Automatically remembers last connected VPN for quick reconnection across sessions
+- **VPN Switching**: Single password prompt for disconnecting current and connecting to new VPN
+- **Previous VPN Memory**: Remembers last connected VPN for quick reconnection across sessions
 
-### **🎮 Gaming Controller Battery Monitoring**
-- **Automatic Controller Detection**: Uses UPower to automatically detect wireless gaming controllers with batteries (Xbox, PlayStation, Nintendo, etc.)
-- **Real-Time Battery Status**: Live battery percentage display with circular progress indicators next to main battery
-- **Multiple Controller Support**: Simultaneously monitor multiple connected controllers with individual widgets
-- **Visual Indicators**: Low battery alerts (≤15%) with red styling and detailed tooltips showing model, charge level, and time remaining
+### **🌤️ Weather Dashboard**
+- **3-Day Weather Forecast**: Dashboard now includes upcoming weather information displaying current day plus the next 2 days with temperature and condition previews, featuring current conditions and 4 daily time periods (midnight, morning, noon, evening)
+- **Weather Access**: Weather pill in the bar is now clickable for direct access
+- **Weather Updates**: Weather information refreshes every 10 minutes to ensure current data
 
-### **🖱️ Enhanced Dock Interaction**
-- **Right-Click Context Menu**: Pin/unpin apps and close running instances with context-aware menu options
+### **🌐 Weather Service**
+- **Weather API**: Switched from wttr.in to the Yr/Met.no weather API (run by the Norwegian Meteorological Institute) for more reliable and accurate weather data. **Fun Fact**: Jeremy Clarkson uses Yr for weather forecasts on his farm
+
+### **🔐 WiFi Security Interface**
+- **In-Dashboard Password Prompt**: Password entry for secured WiFi networks without leaving the main interface
+- **UI Design**: Password prompt matches calendar width and styling for visual consistency
+- **Show/Hide Password**: Toggle password visibility with eye icon button
+- **Network Handling**: Detection of saved networks with priority connection attempts
+- **Visual Feedback**: Clear network status with security indicators and connection progress
 
 ## 📊 Complete Feature List
 
