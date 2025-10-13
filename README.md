@@ -1,6 +1,15 @@
 <p align="center">
-<a href="https://github.com/Axenide/Ax-Shell">
+<a href="https://github.com/OlaYZen/YZ-Shell">
   <img src="assets/cover.png">
+  </a>
+</p>
+
+<p align="center">
+  <a href="https://www.gnu.org/licenses/agpl-3.0.html">
+    <img src="https://img.shields.io/badge/License-AGPL%20v3-blue.svg" alt="GNU Affero General Public License v3.0">
+  </a>
+  <a href="https://github.com/OlaYZen/YZ-Shell/blob/main/LICENSE">
+    <img src="https://img.shields.io/badge/View%20License-LICENSE-green.svg" alt="View License">
   </a>
 </p>
 
@@ -45,6 +54,31 @@ A feature-rich, modular desktop shell for Hyprland with comprehensive functional
 > [!NOTE]
 > This is a fork of [Ax-Shell](https://github.com/Axenide/Ax-Shell) with additional features and enhancements.
 
+## 📄 License & Copyright
+
+**YZ-Shell** is licensed under the **GNU Affero General Public License v3.0**.
+
+```
+YZ-Shell: A hackable shell for Hyprland, powered by Fabric.
+Copyright (C) 2025  OlaYZen
+Based on Ax-Shell by Adriano Tisera (Axenide)
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU Affero General Public License as published
+by the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU Affero General Public License for more details.
+
+You should have received a copy of the GNU Affero General Public License
+along with this program.  If not, see <https://www.gnu.org/licenses/>.
+```
+
+**Important for Network Services**: This software can interact with users remotely through a computer network. The source code is available at [https://github.com/OlaYZen/YZ-Shell](https://github.com/OlaYZen/YZ-Shell) to comply with AGPL v3.0 requirements.
+
 ---
 
 > [!TIP]
@@ -53,13 +87,17 @@ A feature-rich, modular desktop shell for Hyprland with comprehensive functional
 > **[Adwaita Sans Regular](https://gitlab.gnome.org/GNOME/adwaita-fonts)** as your [gsettings](https://man.archlinux.org/man/gsettings.1.en) font because I designed YZ-Shell's interface around this font
 
 > [!NOTE]
+> You need a functioning Hyprland installation.
+> This will also enable NetworkManager if it is not already enabled.
+
+### Arch Linux
 > Using other fonts may cause iCal events to display incorrectly (too small or too large)
 
 
 
 ## 🔄 Fork Enhancements
 
-This fork includes several improvements over the original Ax-Shell:
+This fork includes several improvements over the original YZ-Shell:
 
 ### **🔍 Application Search**
 - **Character Matching**: Type partial words to find applications instantly - typing `d` shows Vesktop through Discord association
@@ -401,10 +439,14 @@ This fork includes several improvements over the original Ax-Shell:
 > [!TIP]
 > This command also works for updating an existing installation!
 
-
+**Run the following command in your terminal once logged into Hyprland:**
 ```bash
 curl -fsSL https://raw.githubusercontent.com/OlaYZen/YZ-Shell/main/install.sh | bash
 ```
+
+### NixOS
+[poogas](https://github.com/poogas) has created a flake for YZ-Shell.
+👉 [Try it out!](https://github.com/poogas/YZ-Shell) 👈
 
 
 ## 📖 Usage Guide
@@ -666,14 +708,14 @@ VPN/
 - [x] VPN (WireGuard configs)
 - [x] Wallpaper Selector
 - [x] Workspaces Overview
-- [ ] Multi-monitor support
+- [x] Multi-monitor support
 - [ ] Multimodal AI Assistant
 - [ ] OSD
 - [ ] OTP Manager
 
 ## Support
 
-If you find Ax-Shell useful, please consider supporting the **original project creator**:
+If you find YZ-Shell useful, please consider supporting the **original project creator**:
 
 <p align="center">
   <a href='https://ko-fi.com/Axenide' target='_blank'>
@@ -683,3 +725,27 @@ If you find Ax-Shell useful, please consider supporting the **original project c
 
 > [!Note]
 > This is a fork with additional features. Please support [Axenide](https://github.com/Axenide), the original creator of Ax-Shell.
+
+## Legal & License Compliance
+
+**YZ-Shell** is distributed under the **GNU Affero General Public License v3.0**. This means:
+
+- ✅ **Free Software**: You can use, modify, and distribute this software freely
+- ✅ **Source Code Available**: Complete source code is available at [GitHub](https://github.com/OlaYZen/YZ-Shell)
+- ✅ **Network Interaction Compliance**: Source code is available for any network services
+- ✅ **Copyleft**: Modified versions must also be licensed under AGPL v3.0
+- ✅ **Attribution Required**: Original copyright notices must be preserved
+
+**For Developers**: If you create derivative works or modifications, you must:
+1. License your work under AGPL v3.0
+2. Provide source code to users
+3. Preserve original copyright notices
+4. Include the full license text
+
+**For Users**: You have the right to:
+- Use the software for any purpose
+- Study and modify the source code
+- Distribute copies (with source code)
+- Distribute modified versions (with source code)
+
+For the complete license terms, see [LICENSE](LICENSE) or visit [https://www.gnu.org/licenses/agpl-3.0.html](https://www.gnu.org/licenses/agpl-3.0.html).

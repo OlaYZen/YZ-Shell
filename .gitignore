@@ -7,5 +7,6 @@ YZ-Shell.code-workspace
 .aider*
 config/dock.json
 config/dock.json.bak
+AGENTS.md
 /VPN
 previous_vpn.txt

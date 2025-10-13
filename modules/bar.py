@@ -2,8 +2,9 @@ import json
 import os
 
 from fabric.hyprland.service import HyprlandEvent
-from fabric.hyprland.widgets import (Language, WorkspaceButton, Workspaces,
-                                     get_hyprland_connection)
+from fabric.hyprland.widgets import HyprlandLanguage as Language
+from fabric.hyprland.widgets import HyprlandWorkspaces as Workspaces
+from fabric.hyprland.widgets import WorkspaceButton, get_hyprland_connection
 from fabric.utils.helpers import exec_shell_command_async
 from fabric.widgets.box import Box
 from fabric.widgets.button import Button
@@ -18,6 +19,7 @@ import modules.icons as icons
 from modules.controls import ControlSmall
 from modules.dock import Dock
 from modules.metrics import Battery, MetricsSmall, NetworkApplet, ControllerBattery
+from modules.systemprofiles import Systemprofiles
 from modules.systemtray import SystemTray
 from modules.weather import Weather
 from widgets.wayland import WaylandWindow as Window
@@ -45,13 +47,16 @@ tooltip_overview = """<b>Overview</b>"""
 
 
 class Bar(Window):
-    def __init__(self, **kwargs):
+    def __init__(self, monitor_id: int = 0, **kwargs):
+        self.monitor_id = monitor_id
+        
         super().__init__(
             name="bar",
             layer="top",
             exclusivity="auto",
             visible=True,
             all_visible=True,
+            monitor=monitor_id,
         )
 
         # Initialize display mode and previous mode for datetime cycling
@@ -104,6 +109,18 @@ class Bar(Window):
         self.dock_instance = None
         self.integrated_dock_widget = None
 
+        # Calculate workspace range based on monitor_id
+        # Monitor 0: workspaces 1-10, Monitor 1: workspaces 11-20, etc.
+        start_workspace = self.monitor_id * 10 + 1
+        end_workspace = start_workspace + 10
+        workspace_range = range(start_workspace, end_workspace)
+
+        # Calculate workspace range based on monitor_id
+        # Monitor 0: workspaces 1-10, Monitor 1: workspaces 11-20, etc.
+        start_workspace = self.monitor_id * 10 + 1
+        end_workspace = start_workspace + 10
+        workspace_range = range(start_workspace, end_workspace)
+
         # Workspaces buttons
         self.workspaces = Workspaces(
             name="workspaces",
@@ -122,8 +139,13 @@ class Bar(Window):
                     label=None,
                     style_classes=["vertical"] if data.VERTICAL else None,
                 )
-                for i in range(1, 11)
+                for i in workspace_range
             ],
+            buttons_factory=(
+                None
+                if data.BAR_HIDE_SPECIAL_WORKSPACE
+                else Workspaces.default_buttons_factory
+            ),
         )
 
         self.workspaces_num = Workspaces(
@@ -144,13 +166,22 @@ class Bar(Window):
                     if data.BAR_WORKSPACE_USE_CHINESE_NUMERALS and 1 <= i <= len(CHINESE_NUMERALS)
                     else str(i),
                 )
-                for i in range(1, 11)
+                for i in workspace_range
             ],
+            buttons_factory=(
+                None
+                if data.BAR_HIDE_SPECIAL_WORKSPACE
+                else Workspaces.default_buttons_factory
+            ),
         )
 
         self.ws_container = Box(
             name="workspaces-container",
-            children=self.workspaces if not data.BAR_WORKSPACE_SHOW_NUMBER else self.workspaces_num,
+            children=(
+                self.workspaces
+                if not data.BAR_WORKSPACE_SHOW_NUMBER
+                else self.workspaces_num
+            ),
         )
 
         self.button_tools = Button(
@@ -165,12 +196,17 @@ class Bar(Window):
         self.button_tools.connect("leave_notify_event", self.on_button_leave)
 
         self.systray = SystemTray()
+
         self.weather = Weather()
+        self.sysprofiles = Systemprofiles()
+
         self.network = NetworkApplet()
 
         self.lang_label = Label(name="lang-label")
         self.language = Button(
+            
             name="language", h_align="center", v_align="center", child=self.lang_label
+        
         )
         self.on_language_switch()
         self.connection.connect("event::activelayout", self.on_language_switch)
@@ -238,6 +274,7 @@ class Bar(Window):
             ),
         )
 
+
         self.boxed_revealer_right = Box(
             name="boxed-revealer",
             children=[self.revealer_right],
@@ -262,12 +299,14 @@ class Bar(Window):
             children=[self.revealer_left],
         )
 
+
         self.h_start_children = [
             self.button_apps,
             self.ws_container,
             self.button_overview,
             self.boxed_revealer_left,
         ]
+
 
         self.h_end_children = [
             self.boxed_revealer_right,
@@ -280,19 +319,23 @@ class Bar(Window):
             self.button_power,
         ]
 
+
         self.v_start_children = [
             self.button_apps,
             self.systray,
             self.control,
+            self.sysprofiles,
             self.network,
             self.button_tools,
         ]
+
 
         self.v_center_children = [
             self.button_overview,
             self.ws_container,
             self.weather,
         ]
+
 
         self.v_end_children = [
             self.battery,
@@ -302,6 +345,7 @@ class Bar(Window):
             self.date_time,
             self.button_power,
         ]
+
 
         self.v_all_children = []
         self.v_all_children.extend(self.v_start_children)
@@ -320,7 +364,10 @@ class Bar(Window):
 
         is_centered_bar = data.VERTICAL and getattr(data, "CENTERED_BAR", False)
 
+        is_centered_bar = data.VERTICAL and getattr(data, "CENTERED_BAR", False)
+
         bar_center_actual_children = None
+
 
         if self.integrated_dock_widget is not None:
             bar_center_actual_children = self.integrated_dock_widget
@@ -389,6 +436,7 @@ class Bar(Window):
         for tc in theme_classes:
             self.bar_inner.remove_style_class(tc)
 
+
         self.style = None
         match current_theme:
             case "Pills":
@@ -412,7 +460,9 @@ class Bar(Window):
             for theme_class_to_remove in ["pills", "dense", "edge"]:
                 style_context = self.integrated_dock_widget.get_style_context()
                 if style_context.has_class(theme_class_to_remove):
-                    self.integrated_dock_widget.remove_style_class(theme_class_to_remove)
+                    self.integrated_dock_widget.remove_style_class(
+                        theme_class_to_remove
+                    )
             self.integrated_dock_widget.add_style_class(self.style)
 
         if data.BAR_THEME == "Dense" or data.BAR_THEME == "Edge":
@@ -460,9 +510,11 @@ class Bar(Window):
             "button_power": self.button_power,
         }
 
+
         for component_name, widget in components.items():
             if component_name in self.component_visibility:
                 widget.set_visible(self.component_visibility[component_name])
+
 
     def toggle_component_visibility(self, component_name):
         components = {
@@ -482,6 +534,7 @@ class Bar(Window):
             "button_power": self.button_power,
         }
 
+
         if component_name in components and component_name in self.component_visibility:
             self.component_visibility[component_name] = not self.component_visibility[component_name]
             components[component_name].set_visible(self.component_visibility[component_name])
@@ -498,6 +551,7 @@ class Bar(Window):
                         json.dump(config, f, indent=4)
                 except Exception as e:
                     print(f"Error updating config file: {e}")
+
 
             return self.component_visibility[component_name]
 
@@ -527,8 +581,12 @@ class Bar(Window):
     def power_menu(self):
         if self.notch:
             self.notch.open_notch("power")
+        if self.notch:
+            self.notch.open_notch("power")
 
     def tools_menu(self):
+        if self.notch:
+            self.notch.open_notch("tools")
         if self.notch:
             self.notch.open_notch("tools")
 

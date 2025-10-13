@@ -105,12 +105,12 @@ class Weather(Box):
             else:
                 self.has_weather_data = False
                 GLib.idle_add(self.label.set_markup, f"{icons.cloud_off} Unavailable")
-                GLib.idle_add(super().set_visible, False)
+                GLib.idle_add(self.set_visible, False)
         except Exception as e:
             self.has_weather_data = False
             print(f"Error fetching weather: {e}")
             GLib.idle_add(self.label.set_markup, f"{icons.cloud_off} Error")
-            GLib.idle_add(super().set_visible, False)
+            GLib.idle_add(self.set_visible, False)
 
     def on_button_enter(self, button, event):
         # Implement hover effects when the button is entered

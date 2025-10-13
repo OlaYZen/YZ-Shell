@@ -19,7 +19,6 @@ from gi.repository import Gdk, GLib, Gtk
 import config.data as data
 from modules.corners import MyCorner
 from utils.icon_resolver import IconResolver
-from utils.occlusion import check_occlusion
 from widgets.wayland import WaylandWindow as Window
 
 
@@ -72,11 +71,14 @@ def createSurfaceFromWidget(widget: Gtk.Widget) -> cairo.ImageSurface:
 class Dock(Window):
     _instances = []
     
-    def __init__(self, integrated_mode: bool = False, **kwargs):
+    def __init__(self, monitor_id: int = 0, integrated_mode: bool = False, **kwargs):
+        self.monitor_id = monitor_id
 
         self.integrated_mode = integrated_mode
         self.icon_size = 20 if self.integrated_mode else data.DOCK_ICON_SIZE
         self.effective_occlusion_size = 36 + self.icon_size
+        self.always_show = data.DOCK_ALWAYS_SHOW if not self.integrated_mode else False
+        self.always_occluded = data.DOCK_ALWAYS_OCCLUDED if not self.integrated_mode else False
 
         anchor_to_set: str
         revealer_transition_type: str
@@ -117,7 +119,8 @@ class Dock(Window):
                 layer="top",
                 anchor=anchor_to_set,
                 margin="0px 0px 0px 0px",
-                exclusivity="none",
+                exclusivity="auto" if self.always_show else "none",
+                monitor=monitor_id,
                 **kwargs,
             )
             Dock._instances.append(self)
@@ -129,6 +132,19 @@ class Dock(Window):
             revealer_transition_type = "slide-up"
             main_box_orientation_val = Gtk.Orientation.VERTICAL
             main_box_h_align_val = "center"
+
+        if not self.integrated_mode:
+            match data.BAR_POSITION:
+                case "Top":
+                    self.set_margin("-8px 0px 0px 0px")
+                case "Bottom":
+                    self.set_margin("0px 0px 0px 0px")
+                case "Left":
+                    self.set_margin("0px 0px 0px -8px")
+                case "Right":
+                    self.set_margin("0px -8px 0px 0px")
+                case _:
+                    self.set_margin("0px 0px 0px 0px")
 
         self.config = read_config()
         self.conn = get_hyprland_connection()
@@ -142,9 +158,9 @@ class Dock(Window):
         self.hide_id = None
         self._arranger_handler = None
         self._drag_in_progress = False
-        self.always_occluded = data.DOCK_ALWAYS_OCCLUDED if not self.integrated_mode else False
         self.is_mouse_over_dock_area = False
         self._prevent_occlusion = False
+        self._forced_occlusion = False
 
         self.view = Box(name="viewport", spacing=4)
         self.wrapper = Box(name="dock", children=[self.view], style_classes=["left"] if data.BAR_POSITION == "Right" else [])
@@ -251,9 +267,12 @@ class Dock(Window):
             
 
             if not data.DOCK_ENABLED:
-                self.set_visible(False) 
+                # Hide normal dock when it should be embedded in the bar OR when dock is disabled
+                should_be_embedded = (data.BAR_POSITION == "Bottom") or (data.PANEL_THEME == "Panel" and data.BAR_POSITION in ["Top", "Bottom"])
+                if should_be_embedded or not data.DOCK_ENABLED:
+                    self.set_visible(False) 
             
-            if self.always_occluded: 
+            if self.always_show: 
                 self.dock_full.add_style_class("occluded")
 
         self.view.drag_source_set(
@@ -273,7 +292,7 @@ class Dock(Window):
 
         if self.conn.ready:
             self.update_dock()
-            if not self.integrated_mode: GLib.timeout_add(250, self.check_occlusion_state)
+            if not self.integrated_mode: GLib.timeout_add(500, self.check_occlusion_state)
         else:
             self.conn.connect("event::ready", self.update_dock)
             if not self.integrated_mode: self.conn.connect("event::ready", lambda *args: GLib.timeout_add(250, self.check_occlusion_state))
@@ -284,7 +303,7 @@ class Dock(Window):
         if not self.integrated_mode:
             self.conn.connect("event::workspace", self.check_hide)
         
-        GLib.timeout_add_seconds(1, self.check_config_change)
+        GLib.timeout_add_seconds(2, self.check_config_change)
             
     def _build_app_identifiers_map(self):
         identifiers = {}
@@ -322,13 +341,16 @@ class Dock(Window):
             GLib.source_remove(self.hide_id)
             self.hide_id = None
         self.dock_revealer.set_reveal_child(True)
-        if not self.always_occluded:
+        if not self.always_show:
             self.dock_full.remove_style_class("occluded")
 
     def _on_hover_leave(self, *args):
         if self.integrated_mode: return 
         self.is_mouse_over_dock_area = False
-        self.delay_hide()
+        if self._forced_occlusion:
+            self.dock_revealer.set_reveal_child(False)
+        else:
+            self.delay_hide()
 
     def _on_dock_enter(self, widget, event):
         if self.integrated_mode: return True 
@@ -337,7 +359,7 @@ class Dock(Window):
             GLib.source_remove(self.hide_id)
             self.hide_id = None
         self.dock_revealer.set_reveal_child(True)
-        if not self.always_occluded:
+        if not self.always_show:
             self.dock_full.remove_style_class("occluded")
         return True
 
@@ -347,9 +369,13 @@ class Dock(Window):
             return False
 
         self.is_mouse_over_dock_area = False
-        self.delay_hide()
         
-        if self.always_occluded:
+        if self._forced_occlusion:
+            self.dock_revealer.set_reveal_child(False)
+        else:
+            self.delay_hide()
+        
+        if not self.always_show:
             self.dock_full.add_style_class("occluded")
         return True
 
@@ -585,13 +611,8 @@ class Dock(Window):
             return False 
         self.hide_id = None 
         if not self.is_mouse_over_dock_area and not self._drag_in_progress and not self._prevent_occlusion:
-            if self.always_occluded:
+            if not self.always_show:
                 self.dock_revealer.set_reveal_child(False)
-            else:
-
-                occlusion_region = ("bottom", self.effective_occlusion_size) if self.actual_dock_is_horizontal else ("right", self.effective_occlusion_size)
-                if check_occlusion(occlusion_region) or not self.view.get_children():
-                    self.dock_revealer.set_reveal_child(False)
         return False
 
     def check_hide(self, *args):
@@ -604,17 +625,10 @@ class Dock(Window):
         current_ws = self.get_workspace()
         ws_clients = [w for w in clients if w["workspace"]["id"] == current_ws]
 
-        if not self.always_occluded:
-            if not ws_clients:
-                if not self.dock_revealer.get_reveal_child():
-                    self.dock_revealer.set_reveal_child(True)
-                self.dock_full.remove_style_class("occluded")
-            elif any(not w.get("floating") and not w.get("fullscreen") for w in ws_clients):
-                self.check_occlusion_state()
-            else:
-                if not self.dock_revealer.get_reveal_child():
-                    self.dock_revealer.set_reveal_child(True)
-                self.dock_full.remove_style_class("occluded")
+        if self.always_show:
+            if not self.dock_revealer.get_reveal_child():
+                self.dock_revealer.set_reveal_child(True)
+            self.dock_full.remove_style_class("occluded")
         else:
             if self.dock_revealer.get_reveal_child():
                 self.dock_revealer.set_reveal_child(False)
@@ -746,7 +760,7 @@ class Dock(Window):
         if self.is_mouse_over_dock_area or self._drag_in_progress or self._prevent_occlusion:
             if not self.dock_revealer.get_reveal_child():
                 self.dock_revealer.set_reveal_child(True)
-            if not self.always_occluded:
+            if not self.always_show:
                  self.dock_full.remove_style_class("occluded")
             return True
 
@@ -756,19 +770,22 @@ class Dock(Window):
             self.dock_full.add_style_class("occluded")
             return True
 
-        occlusion_region = ("bottom", self.effective_occlusion_size) if self.actual_dock_is_horizontal else ("right", self.effective_occlusion_size)
-        is_occluded_by_window = check_occlusion(occlusion_region)
-        is_empty = not self.view.get_children()
+        if self.is_mouse_over_dock_area or self._drag_in_progress or self._prevent_occlusion:
+            if not self.dock_revealer.get_reveal_child():
+                self.dock_revealer.set_reveal_child(True)
+            if not self.always_show:
+                 self.dock_full.remove_style_class("occluded")
+            return True
 
-        if is_occluded_by_window or is_empty:
-            if self.dock_revealer.get_reveal_child():
-                self.dock_revealer.set_reveal_child(False)
-            self.dock_full.add_style_class("occluded")
-        else:
+        if self.always_show:
             if not self.dock_revealer.get_reveal_child():
                 self.dock_revealer.set_reveal_child(True)
             self.dock_full.remove_style_class("occluded")
-        
+        else:
+            if self.dock_revealer.get_reveal_child():
+                self.dock_revealer.set_reveal_child(False)
+            self.dock_full.add_style_class("occluded")
+
         return True
 
     def _find_drag_target(self, widget):
@@ -857,9 +874,9 @@ class Dock(Window):
     def check_config_change(self):
         new_config = read_config()
         if not self.integrated_mode:
-            new_always_occluded = data.DOCK_ALWAYS_OCCLUDED 
-            if self.always_occluded != new_always_occluded:
-                self.always_occluded = new_always_occluded
+            new_always_show = data.DOCK_ALWAYS_SHOW 
+            if self.always_show != new_always_show:
+                self.always_show = new_always_show
                 self.check_occlusion_state() 
 
         if new_config.get("pinned_apps", []) != self.config.get("pinned_apps", []):
@@ -910,10 +927,10 @@ class Dock(Window):
         new_config = read_config()
         
         if not self.integrated_mode:
-            previous_always_occluded = self.always_occluded
-            self.always_occluded = data.DOCK_ALWAYS_OCCLUDED 
+            previous_always_show = self.always_show
+            self.always_show = data.DOCK_ALWAYS_SHOW 
             
-            if previous_always_occluded != self.always_occluded:
+            if previous_always_show != self.always_show:
                 self.check_occlusion_state() 
         
         if new_config.get("pinned_apps", []) != self.config.get("pinned_apps", []):
@@ -932,3 +949,26 @@ class Dock(Window):
             else:
                 if hasattr(dock, 'dock_revealer') and dock.dock_revealer.get_reveal_child():
                     dock.dock_revealer.set_reveal_child(False)
+    
+    def force_occlusion(self):
+        """Force dock to hide and act as if always_show is False."""
+        if self.integrated_mode:
+            return
+        # Save current always_show state
+        self._saved_always_show = self.always_show
+        # Set to False to enable hover behavior
+        self.always_show = False
+        self._forced_occlusion = True
+        if not self.is_mouse_over_dock_area:
+            self.dock_revealer.set_reveal_child(False)
+    
+    def restore_from_occlusion(self):
+        """Restore dock to its previous always_show state."""
+        if self.integrated_mode:
+            return
+        self._forced_occlusion = False
+        # Restore saved always_show state
+        if hasattr(self, '_saved_always_show'):
+            self.always_show = self._saved_always_show
+            delattr(self, '_saved_always_show')
+        self.check_occlusion_state()

@@ -49,6 +49,7 @@ class Cava:
         self.data_handler = mainapp.draw.update
         self.command = ["cava", "-p", self.cava_config_file]
         self.state = self.NONE
+        self.process = None
 
         self.env = dict(os.environ)
         self.env["LC_ALL"] = "en_US.UTF-8"  # not sure if it's necessary
@@ -64,7 +65,6 @@ class Cava:
         self.io_watch_id = None
 
     def _run_process(self):
-        logger.debug("Launching cava process...")
         try:
             self.process = subprocess.Popen(
                 self.command,
@@ -73,13 +73,11 @@ class Cava:
                 env=self.env,
                 preexec_fn=set_death_signal  # Ensure cava gets killed when the parent dies.
             )
-            logger.debug("cava successfully launched!")
             self.state = self.RUNNING
         except Exception:
             logger.exception("Fail to launch cava")
 
     def _start_io_reader(self):
-        logger.debug("Activating GLib IO watch for cava stream handler")
         # Open FIFO in non-blocking mode for reading
         self.fifo_fd = os.open(self.path, os.O_RDONLY | os.O_NONBLOCK)
         # Open dummy write end to prevent getting an EOF on our FIFO
@@ -89,31 +87,43 @@ class Cava:
     def _io_callback(self, source, condition):
         chunk = self.byte_size * self.bars  # number of bytes for given format
         try:
+            if self.fifo_fd is None:
+                return False
+                
             data = os.read(self.fifo_fd, chunk)
         except OSError as e:
-            # logger.error("Error reading FIFO: {}".format(e))
+            if e.errno == 11:  # EAGAIN - would block, normal for non-blocking
+                return True
+            elif e.errno == 9:  # EBADF - bad file descriptor
+                GLib.idle_add(self.restart)
+                return False
+            else:
+                return False
+        except Exception:
             return False
 
         # When no data is read, do not remove the IO watch immediately.
         if len(data) < chunk:
-            # Instead of closing the FIFO, we log a warning and continue.
-            # logger.warning("Incomplete data packet received (expected {} bytes, got {}). Waiting for more data...".format(chunk, len(data)))
-            # Returning True keeps the IO watch active. A real EOF will only occur when the writer closes.
-            return True
+            if len(data) == 0:
+                # No data available, continue watching
+                return True
+            else:
+                return True
 
-        fmt = self.byte_type * self.bars  # format string for struct.unpack
-        sample = [i / self.byte_norm for i in struct.unpack(fmt, data)]
-        GLib.idle_add(self.data_handler, sample)
+        try:
+            fmt = self.byte_type * self.bars  # format string for struct.unpack
+            sample = [i / self.byte_norm for i in struct.unpack(fmt, data)]
+            GLib.idle_add(self.data_handler, sample)
+        except (struct.error, Exception):
+            return True
+            
         return True
 
     def _on_stop(self):
-        logger.debug("Cava stream handler deactivated")
         if self.state == self.RESTARTING:
             self.start()
         elif self.state == self.RUNNING:
             self.state = self.NONE
-            logger.error("Cava process was unexpectedly terminated.")
-            # self.restart()  # May cause infinity loop, need more check
 
     def start(self):
         """Launch cava"""
@@ -123,27 +133,54 @@ class Cava:
     def restart(self):
         """Restart cava process"""
         if self.state == self.RUNNING:
-            logger.debug("Restarting cava process (normal mode) ...")
             self.state = self.RESTARTING
-            if self.process.poll() is None:
+            if self.process and self.process.poll() is None:
                 self.process.kill()
         elif self.state == self.NONE:
-            logger.warning("Restarting cava process (after crash) ...")
             self.start()
 
     def close(self):
         """Stop cava process"""
         self.state = self.CLOSING
-        if self.process.poll() is None:
-            self.process.kill()
+        
+        # Stop IO watch first
         if self.io_watch_id:
             GLib.source_remove(self.io_watch_id)
-        if self.fifo_fd:
-            os.close(self.fifo_fd)
-        if self.fifo_dummy_fd:
-            os.close(self.fifo_dummy_fd)
+            self.io_watch_id = None
+            
+        # Close file descriptors safely
+        if self.fifo_fd is not None:
+            try:
+                os.close(self.fifo_fd)
+            except OSError:
+                pass
+            finally:
+                self.fifo_fd = None
+                
+        if self.fifo_dummy_fd is not None:
+            try:
+                os.close(self.fifo_dummy_fd)
+            except OSError:
+                pass
+            finally:
+                self.fifo_dummy_fd = None
+        
+        # Kill process if still running
+        if self.process and self.process.poll() is None:
+            try:
+                self.process.kill()
+                self.process.wait(timeout=2.0)  # Wait up to 2 seconds
+            except subprocess.TimeoutExpired:
+                self.process.kill()
+            except Exception:
+                pass
+        
+        # Remove FIFO file
         if os.path.exists(self.path):
-            os.remove(self.path)
+            try:
+                os.remove(self.path)
+            except OSError:
+                pass
 
 class AttributeDict(dict):
     """Dictionary with keys as attributes. Does nothing but easy reading"""
@@ -159,6 +196,8 @@ class Spectrum:
         self.silence_value = 0
         self.audio_sample = []
         self.color = None
+        self._cached_color = None
+        self._color_file_mtime = 0
 
         self.area = Gtk.DrawingArea()
         self.area.connect("draw", self.redraw)
@@ -181,7 +220,7 @@ class Spectrum:
 
     def update(self, data):
         """Audio data processing"""
-        self.color_update()
+        self.color_update_cached()
         self.audio_sample = data
         if not self.is_silence(self.audio_sample[0]):
             self.area.queue_draw()
@@ -226,6 +265,34 @@ class Spectrum:
         self.sizes.bar.width = max(int(tw / self.sizes.number), 1)
         self.sizes.bar.height = self.sizes.area.height
 
+    def color_update_cached(self):
+        """Set drawing color with caching to avoid file reads on every frame"""
+        color_file = get_relative_path("../styles/colors.css")
+        try:
+            # Check if file has been modified
+            current_mtime = os.path.getmtime(color_file)
+            if current_mtime != self._color_file_mtime or self._cached_color is None:
+                self._color_file_mtime = current_mtime
+                
+                color = "#a5c8ff"  # default value
+                with open(color_file, "r") as f:
+                    content = f.read()
+                    m = re.search(r"--primary:\s*(#[0-9a-fA-F]{6})", content)
+                    if m:
+                        color = m.group(1)
+                
+                red = int(color[1:3], 16) / 255
+                green = int(color[3:5], 16) / 255
+                blue = int(color[5:7], 16) / 255
+                self._cached_color = Gdk.RGBA(red=red, green=green, blue=blue, alpha=1.0)
+                
+            self.color = self._cached_color
+        except Exception:
+            if self._cached_color is None:
+                # Fallback to default color
+                self._cached_color = Gdk.RGBA(red=0.647, green=0.784, blue=1.0, alpha=1.0)
+                self.color = self._cached_color
+
     def color_update(self):
         """Set drawing color according to current settings by reading primary color from CSS"""
         color = "#a5c8ff"  # default value
@@ -235,8 +302,8 @@ class Spectrum:
                 m = re.search(r"--primary:\s*(#[0-9a-fA-F]{6})", content)
                 if m:
                     color = m.group(1)
-        except Exception as e:
-            logger.error("Failed to read primary color: {}".format(e))
+        except Exception:
+            pass
         red = int(color[1:3], 16) / 255
         green = int(color[3:5], 16) / 255
         blue = int(color[5:7], 16) / 255

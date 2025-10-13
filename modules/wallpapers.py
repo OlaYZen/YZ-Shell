@@ -32,25 +32,8 @@ class WallpaperSelector(Box):
         super().__init__(name="wallpapers", spacing=4, orientation="v", h_expand=False, v_expand=False, **kwargs)
         os.makedirs(self.CACHE_DIR, exist_ok=True)
 
-        # Process old wallpapers: use os.scandir for efficiency and only loop
-        # over image files that actually need renaming (they're not already lowercase
-        # and with hyphens instead of spaces)
-        with os.scandir(data.WALLPAPERS_DIR) as entries:
-            for entry in entries:
-                if entry.is_file() and self._is_image(entry.name):
-                    # Check if the file needs renaming: file should be lowercase and have hyphens instead of spaces
-                    if entry.name != entry.name.lower() or " " in entry.name:
-                        new_name = entry.name.lower().replace(" ", "-")
-                        full_path = os.path.join(data.WALLPAPERS_DIR, entry.name)
-                        new_full_path = os.path.join(data.WALLPAPERS_DIR, new_name)
-                        try:
-                            os.rename(full_path, new_full_path)
-                            print(f"Renamed old wallpaper '{full_path}' to '{new_full_path}'")
-                        except Exception as e:
-                            print(f"Error renaming file {full_path}: {e}")
-
-        # Refresh the file list after potential renaming
-        self.files = sorted([f for f in os.listdir(data.WALLPAPERS_DIR) if self._is_image(f)])
+        self.files = []
+        GLib.idle_add(self._load_wallpapers_async().__next__)
         self.thumbnails = []
         self.thumbnail_queue = []
         self.executor = ThreadPoolExecutor(max_workers=4)  # Shared executor
@@ -199,6 +182,55 @@ class WallpaperSelector(Box):
         self.randomize_dice_icon()
         # Ensure the search entry gets focus when starting
         self.search_entry.grab_focus()
+
+    def _load_wallpapers_async(self):
+        """Non-blocking wallpaper processing."""
+
+        # Process old wallpapers: use os.scandir for efficiency and only loop
+        # over image files that actually need renaming (they're not already lowercase
+        # and with hyphens instead of spaces)
+        with os.scandir(data.WALLPAPERS_DIR) as entries:
+            for entry in entries:
+                if entry.is_file() and self._is_image(entry.name):
+                    # Check if the file needs renaming: file should be lowercase and have hyphens instead of spaces
+                    if entry.name != entry.name.lower() or " " in entry.name:
+                        new_name = entry.name.lower().replace(" ", "-")
+                        full_path = os.path.join(data.WALLPAPERS_DIR, entry.name)
+                        new_full_path = os.path.join(data.WALLPAPERS_DIR, new_name)
+                        try:
+                            os.rename(full_path, new_full_path)
+                            print(
+                                f"Renamed old wallpaper '{full_path}' to '{new_full_path}'"
+                            )
+                        except Exception as e:
+                            print(f"Error renaming file {full_path}: {e}")
+                        yield
+
+        # Process files in small batches to keep UI responsive
+        file_list = os.listdir(data.WALLPAPERS_DIR)
+        batch_size = 20
+
+        # Process files in batches
+        for i in range(0, len(file_list), batch_size):
+            batch = file_list[i : i + batch_size]
+            for filename in batch:
+                if self._is_image(filename):
+                    self.files.append(filename)
+
+            # Sort the current batch to maintain order
+            self.files.sort()
+
+            # Yield to let the main loop process events
+            yield True
+
+        # Final sort of the complete list
+        self.files.sort()
+
+        # Start thumbnail loading after files are processed
+        self._start_thumbnail_thread()
+
+        # Return False to stop the idle callback
+        yield False
 
     def randomize_dice_icon(self):
         dice_icons = [

@@ -30,7 +30,7 @@ CURRENT_HEIGHT = screen.get_height()
 
 
 WALLPAPERS_DIR_DEFAULT = get_relative_path("../assets/wallpapers_example")
-CONFIG_FILE = get_relative_path('../config/config.json')
+CONFIG_FILE = get_relative_path("../config/config.json")
 MATUGEN_STATE_FILE = os.path.join(CONFIG_DIR, "matugen")
 
 
@@ -47,16 +47,22 @@ def load_config():
     """Load the configuration from config.json"""
     config_path = os.path.expanduser(f"~/.config/{APP_NAME_CAP}/config/config.json")
     config = {}
-    
+
     if os.path.exists(config_path):
         try:
-            with open(config_path, 'r') as f:
+            with open(config_path, "r") as f:
                 config = json.load(f)
         except Exception as e:
             print(f"Error loading config: {e}")
-    
+
     return config
 
+
+# Import defaults from settings_constants to avoid duplication
+from .settings_constants import DEFAULTS
+
+# Load configuration once and use throughout the module
+config = {}
 if os.path.exists(CONFIG_FILE):
     with open(CONFIG_FILE, 'r') as f:
         config = json.load(f)
@@ -65,13 +71,14 @@ if os.path.exists(CONFIG_FILE):
     VERTICAL = BAR_POSITION in ["Left", "Right"]
     CENTERED_BAR = config.get('centered_bar', False)
     DATETIME_12H_FORMAT = config.get('datetime_12h_format', False)
-    DATETIME_SHOW_SECONDS = config.get('datetime_show_seconds', True)
     TERMINAL_COMMAND = config.get('terminal_command', "kitty -e")
     DOCK_ENABLED = config.get('dock_enabled', True)
     DOCK_ALWAYS_OCCLUDED = config.get('dock_always_occluded', False)
+    DOCK_ALWAYS_SHOW = config.get('dock_always_show', False)
     DOCK_ICON_SIZE = config.get('dock_icon_size', 28)
     BAR_WORKSPACE_SHOW_NUMBER = config.get('bar_workspace_show_number', False)
     BAR_WORKSPACE_USE_CHINESE_NUMERALS = config.get('bar_workspace_use_chinese_numerals', False)
+    BAR_HIDE_SPECIAL_WORKSPACE = config.get('bar_hide_special_workspace', True)
     BAR_THEME = config.get('bar_theme', "Pills")
     DOCK_THEME = config.get('dock_theme', "Pills")
     PANEL_THEME = config.get('panel_theme', "Pills")
@@ -90,7 +97,6 @@ if os.path.exists(CONFIG_FILE):
         'ws_container': config.get('bar_ws_container_visible', True),
         'weather': config.get('bar_weather_visible', True),
         'battery': config.get('bar_battery_visible', True),
-        'controller_battery': config.get('bar_controller_battery_visible', True),
         'metrics': config.get('bar_metrics_visible', True),
         'language': config.get('bar_language_visible', True),
         'date_time': config.get('bar_date_time_visible', True),
@@ -100,26 +106,20 @@ if os.path.exists(CONFIG_FILE):
     BAR_METRICS_DISKS = config.get('bar_metrics_disks', ["/"])
     METRICS_VISIBLE = config.get('metrics_visible', {'cpu': True, 'ram': True, 'disk': True, 'gpu': True})
     METRICS_SMALL_VISIBLE = config.get('metrics_small_visible', {'cpu': True, 'ram': True, 'disk': True, 'gpu': True})
-    ICAL_SOURCES = config.get('ical_sources', [])
-    # Backward compatibility: convert old ical_urls to new format
-    old_urls = config.get('ical_urls', [])
-    if old_urls and not ICAL_SOURCES:
-        ICAL_SOURCES = [{'url': url, 'color': '#007acc', 'name': f'Calendar {i+1}'} for i, url in enumerate(old_urls)]
-    PLAYER_COVER_SPINNING = config.get('player_cover_spinning', True)
-    SETTINGS_WINDOW_RESIZABLE = config.get('settings_window_resizable', False)
 else:
     WALLPAPERS_DIR = WALLPAPERS_DIR_DEFAULT
     BAR_POSITION = "Top"
     VERTICAL = False
     CENTERED_BAR = False
     DATETIME_12H_FORMAT = False
-    DATETIME_SHOW_SECONDS = True
     DOCK_ENABLED = True
     DOCK_ALWAYS_OCCLUDED = False
+    DOCK_ALWAYS_SHOW = False
     TERMINAL_COMMAND = "kitty -e"
     DOCK_ICON_SIZE = 28
     BAR_WORKSPACE_SHOW_NUMBER = False
     BAR_WORKSPACE_USE_CHINESE_NUMERALS = False
+    BAR_HIDE_SPECIAL_WORKSPACE = True
     BAR_THEME = "Pills"
     DOCK_THEME = "Pills"
     PANEL_THEME = "Notch"
@@ -138,7 +138,6 @@ else:
         'ws_container': True,
         'weather': True,
         'battery': True,
-        'controller_battery': True,
         'metrics': True,
         'language': True,
         'date_time': True,
@@ -148,6 +147,3 @@ else:
     BAR_METRICS_DISKS = ["/"]
     METRICS_VISIBLE = {'cpu': True, 'ram': True, 'disk': True, 'gpu': True}
     METRICS_SMALL_VISIBLE = {'cpu': True, 'ram': True, 'disk': True, 'gpu': True}
-    ICAL_SOURCES = []
-    PLAYER_COVER_SPINNING = True
-    SETTINGS_WINDOW_RESIZABLE = False

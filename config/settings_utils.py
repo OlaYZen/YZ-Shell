@@ -15,9 +15,7 @@ from gi.repository import GLib
 # Importar settings_constants para DEFAULTS
 from . import settings_constants
 from .data import (  # CONFIG_DIR, HOME_DIR no se usan aquí directamente
-    APP_NAME,
-    APP_NAME_CAP,
-)
+    APP_NAME, APP_NAME_CAP)
 
 # Global variable to store binding variables, managed by this module
 bind_vars = {}  # Se inicializa vacío, load_bind_vars lo poblará
@@ -258,32 +256,34 @@ def generate_hyprconf() -> str:
 
     return f"""exec-once = uwsm-app $(python {home}/.config/{APP_NAME_CAP}/main.py)
 exec = pgrep -x "hypridle" > /dev/null || uwsm app -- hypridle
-exec = uwsm app -- swww-daemon
+exec-once = uwsm app -- swww-daemon
 exec-once =  wl-paste --type text --watch cliphist store
 exec-once =  wl-paste --type image --watch cliphist store
 
 $fabricSend = fabric-cli exec {APP_NAME}
 $axMessage = notify-send "Axenide" "FIRE IN THE HOLE‼️🗣️🔥🕳️" -i "{home}/.config/{APP_NAME_CAP}/assets/ax.png" -A "🗣️" -A "🔥" -A "🕳️" -a "Source Code"
 
-bind = {bind_vars.get('prefix_restart', 'SUPER ALT')}, {bind_vars.get('suffix_restart', 'B')}, exec, killall {APP_NAME}; uwsm-app $(python {home}/.config/{APP_NAME_CAP}/main.py) # Reload {APP_NAME_CAP}
-bind = {bind_vars.get('prefix_axmsg', 'SUPER')}, {bind_vars.get('suffix_axmsg', 'A')}, exec, $axMessage # Message
-bind = {bind_vars.get('prefix_dash', 'SUPER')}, {bind_vars.get('suffix_dash', 'D')}, exec, $fabricSend 'notch.open_notch("dashboard")' # Dashboard
-bind = {bind_vars.get('prefix_bluetooth', 'SUPER')}, {bind_vars.get('suffix_bluetooth', 'B')}, exec, $fabricSend 'notch.open_notch("bluetooth")' # Bluetooth
-bind = {bind_vars.get('prefix_pins', 'SUPER')}, {bind_vars.get('suffix_pins', 'Q')}, exec, $fabricSend 'notch.open_notch("pins")' # Pins
-bind = {bind_vars.get('prefix_kanban', 'SUPER')}, {bind_vars.get('suffix_kanban', 'N')}, exec, $fabricSend 'notch.open_notch("kanban")' # Kanban
-bind = {bind_vars.get('prefix_launcher', 'SUPER')}, {bind_vars.get('suffix_launcher', 'R')}, exec, $fabricSend 'notch.open_notch("launcher")' # App Launcher
-bind = {bind_vars.get('prefix_tmux', 'SUPER')}, {bind_vars.get('suffix_tmux', 'T')}, exec, $fabricSend 'notch.open_notch("tmux")' # Tmux
-bind = {bind_vars.get('prefix_cliphist', 'SUPER')}, {bind_vars.get('suffix_cliphist', 'V')}, exec, $fabricSend 'notch.open_notch("cliphist")' # Clipboard History
-bind = {bind_vars.get('prefix_toolbox', 'SUPER')}, {bind_vars.get('suffix_toolbox', 'S')}, exec, $fabricSend 'notch.open_notch("tools")' # Toolbox
-bind = {bind_vars.get('prefix_overview', 'SUPER')}, {bind_vars.get('suffix_overview', 'TAB')}, exec, $fabricSend 'notch.open_notch("overview")' # Overview
-bind = {bind_vars.get('prefix_wallpapers', 'SUPER')}, {bind_vars.get('suffix_wallpapers', 'COMMA')}, exec, $fabricSend 'notch.open_notch("wallpapers")' # Wallpapers
-bind = {bind_vars.get('prefix_randwall', 'SUPER')}, {bind_vars.get('suffix_randwall', 'COMMA')}, exec, $fabricSend 'notch.dashboard.wallpapers.set_random_wallpaper(None, external=True)' # Random Wallpaper
-bind = {bind_vars.get('prefix_emoji', 'SUPER')}, {bind_vars.get('suffix_emoji', 'PERIOD')}, exec, $fabricSend 'notch.open_notch("emoji")' # Emoji Picker
-bind = {bind_vars.get('prefix_power', 'SUPER')}, {bind_vars.get('suffix_power', 'ESCAPE')}, exec, $fabricSend 'notch.open_notch("power")' # Power Menu
+bind = {bind_vars.get("prefix_restart", "SUPER ALT")}, {bind_vars.get("suffix_restart", "B")}, exec, killall {APP_NAME}; uwsm-app $(python {home}/.config/{APP_NAME_CAP}/main.py) # Reload {APP_NAME_CAP}
+bind = {bind_vars.get("prefix_axmsg", "SUPER")}, {bind_vars.get("suffix_axmsg", "A")}, exec, $axMessage # Message
+bind = {bind_vars.get("prefix_dash", "SUPER")}, {bind_vars.get("suffix_dash", "D")}, exec, $fabricSend 'notch.open_notch("dashboard")' # Dashboard
+bind = {bind_vars.get("prefix_bluetooth", "SUPER")}, {bind_vars.get("suffix_bluetooth", "B")}, exec, $fabricSend 'notch.open_notch("bluetooth")' # Bluetooth
+bind = {bind_vars.get("prefix_pins", "SUPER")}, {bind_vars.get("suffix_pins", "Q")}, exec, $fabricSend 'notch.open_notch("pins")' # Pins
+bind = {bind_vars.get("prefix_kanban", "SUPER")}, {bind_vars.get("suffix_kanban", "N")}, exec, $fabricSend 'notch.open_notch("kanban")' # Kanban
+bind = {bind_vars.get("prefix_launcher", "SUPER")}, {bind_vars.get("suffix_launcher", "R")}, exec, $fabricSend 'notch.open_notch("launcher")' # App Launcher
+bind = {bind_vars.get("prefix_tmux", "SUPER")}, {bind_vars.get("suffix_tmux", "T")}, exec, $fabricSend 'notch.open_notch("tmux")' # Tmux
+bind = {bind_vars.get("prefix_cliphist", "SUPER")}, {bind_vars.get("suffix_cliphist", "V")}, exec, $fabricSend 'notch.open_notch("cliphist")' # Clipboard History
+bind = {bind_vars.get("prefix_toolbox", "SUPER")}, {bind_vars.get("suffix_toolbox", "S")}, exec, $fabricSend 'notch.open_notch("tools")' # Toolbox
+bind = {bind_vars.get("prefix_overview", "SUPER")}, {bind_vars.get("suffix_overview", "TAB")}, exec, $fabricSend 'notch.open_notch("overview")' # Overview
+bind = {bind_vars.get("prefix_wallpapers", "SUPER")}, {bind_vars.get("suffix_wallpapers", "COMMA")}, exec, $fabricSend 'notch.open_notch("wallpapers")' # Wallpapers
+bind = {bind_vars.get("prefix_randwall", "SUPER")}, {bind_vars.get("suffix_randwall", "COMMA")}, exec, $fabricSend 'notch.dashboard.wallpapers.set_random_wallpaper(None, external=True)' # Random Wallpaper
+bind = {bind_vars.get("prefix_mixer", "SUPER")}, {bind_vars.get("suffix_mixer", "M")}, exec, $fabricSend 'notch.open_notch("mixer")' # Audio Mixer
+bind = {bind_vars.get("prefix_emoji", "SUPER")}, {bind_vars.get("suffix_emoji", "PERIOD")}, exec, $fabricSend 'notch.open_notch("emoji")' # Emoji Picker
+bind = {bind_vars.get("prefix_power", "SUPER")}, {bind_vars.get("suffix_power", "ESCAPE")}, exec, $fabricSend 'notch.open_notch("power")' # Power Menu
 bind = {bind_vars.get('prefix_weather', 'SUPER')}, {bind_vars.get('suffix_weather', 'W')}, exec, $fabricSend 'notch.open_notch("weather")' # Weather
-bind = {bind_vars.get('prefix_caffeine', 'SUPER SHIFT')}, {bind_vars.get('suffix_caffeine', 'M')}, exec, $fabricSend 'notch.dashboard.widgets.buttons.caffeine_button.toggle_inhibit(external=True)' # Toggle Caffeine
-bind = {bind_vars.get('prefix_css', 'SUPER SHIFT')}, {bind_vars.get('suffix_css', 'B')}, exec, $fabricSend 'app.set_css()' # Reload CSS
-bind = {bind_vars.get('prefix_restart_inspector', 'SUPER CTRL ALT')}, {bind_vars.get('suffix_restart_inspector', 'B')}, exec, killall {APP_NAME}; uwsm-app $(GTK_DEBUG=interactive python {home}/.config/{APP_NAME_CAP}/main.py) # Restart with inspector
+bind = {bind_vars.get("prefix_caffeine", "SUPER SHIFT")}, {bind_vars.get("suffix_caffeine", "M")}, exec, $fabricSend 'notch.dashboard.widgets.buttons.caffeine_button.toggle_inhibit(external=True)' # Toggle Caffeine
+bind = {bind_vars.get("prefix_toggle", "SUPER CTRL")}, {bind_vars.get("suffix_toggle", "B")}, exec, $fabricSend 'from utils.global_keybinds import get_global_keybind_handler; get_global_keybind_handler().toggle_bar()' # Toggle Bar
+bind = {bind_vars.get("prefix_css", "SUPER SHIFT")}, {bind_vars.get("suffix_css", "B")}, exec, $fabricSend 'app.set_css()' # Reload CSS
+bind = {bind_vars.get("prefix_restart_inspector", "SUPER CTRL ALT")}, {bind_vars.get("suffix_restart_inspector", "B")}, exec, killall {APP_NAME}; uwsm-app $(GTK_DEBUG=interactive python {home}/.config/{APP_NAME_CAP}/main.py) # Restart with inspector
 
 # Wallpapers directory: {bind_vars.get('wallpapers_dir', '~/.config/YZ-Shell/assets/wallpapers_example')}
 
@@ -309,7 +309,7 @@ cursor {{
 decoration {{
     blur {{
         enabled = yes
-        size = 5
+        size = 1
         passes = 3
         new_optimizations = yes
         contrast = 1

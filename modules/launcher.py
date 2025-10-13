@@ -231,12 +231,35 @@ class AppLauncher(Box):
         self.viewport.children = []
         self.selected_index = -1
 
+        def extract_command_name(command_line):
+            """Extract base command name from command line, removing paths and arguments"""
+            if not command_line:
+                return ""
+            # Remove common shell wrappers
+            if command_line.startswith("/bin/sh -c"):
+                # Handle wrapped commands like "/bin/sh -c "\$SHELL -i -c scrcpy""
+                return ""
+            # Split by spaces and take first part (the command)
+            cmd = command_line.split()[0] if command_line.split() else ""
+            # Extract just the command name from full paths
+            if "/" in cmd:
+                cmd = cmd.split("/")[-1]
+            return cmd
+
         filtered_apps_iter = iter(
             sorted(
                 [
                     app
                     for app in self._all_apps
-                    if self.should_app_match_query(app, query)
+                    if query.casefold()
+                    in (
+                        (app.display_name or "")
+                        + (" " + app.name + " ")
+                        + (app.generic_name or "")
+                        + (" " + (app.command_line or "") + " ")
+                        + (" " + (app.executable or "") + " ")
+                        + (" " + extract_command_name(app.command_line) + " ")
+                    ).casefold()
                 ],
                 key=lambda app: (app.display_name or "").casefold(),
             )
@@ -250,9 +273,6 @@ class AppLauncher(Box):
         )
 
     def handle_arrange_complete(self, should_resize, query):
-        if should_resize:
-            self.resize_viewport()
-
         if query.strip() != "" and self.viewport.get_children():
             self.update_selection(0)
         return False
@@ -264,10 +284,9 @@ class AppLauncher(Box):
         return True
 
     def resize_viewport(self):
-        self.scrolled_window.set_min_content_width(
-            self.viewport.get_allocation().width
-        )
-        return False
+        # Removed set_min_content_width to prevent size retention issues
+        # when switching between modules in the notch stack
+        pass
 
     def bake_application_slot(self, app: DesktopApp, **kwargs) -> Button:
         button = Button(
@@ -361,6 +380,12 @@ class AppLauncher(Box):
                 self.notch.open_notch("power")
             case ":update":
                 GLib.idle_add(lambda: run_updater(force=True))
+            case ":settings":
+                exec_shell_command_async(f"python {get_relative_path('../config/config.py')}")
+                self.close_launcher()
+            case ":config":
+                exec_shell_command_async(f"python {get_relative_path('../config/config.py')}")
+                self.close_launcher()
             case _:
                 children = self.viewport.get_children()
                 if children:
@@ -616,18 +641,34 @@ class AppLauncher(Box):
         if not expr:
             return
 
-        try:
-            result_value, result_type = self.converter.parse_input_and_convert(expr)
-            if result_type is None:
-                result_str = f"{result_value:.2f}"
-            else:
-                result_str = f"{result_value:.2f} {result_type}"
-        except:
-            result_str = "Error: Invalid conversion expression"
-        
-        # Format the result based on its type
-        
-        self.conversion_history.insert(0, f"{text} => {result_str}")
+        # Add loading entry
+        loading_entry = f"{text} => Loading..."
+        self.conversion_history.insert(0, loading_entry)
+        self.update_conversion_viewport()
+
+        # Perform conversion in thread
+        def do_conversion():
+            try:
+                result_value, result_type = self.converter.parse_input_and_convert(expr)
+                if result_type is None:
+                    result_str = f"{result_value:.2f}"
+                else:
+                    result_str = f"{result_value:.2f} {result_type}"
+            except:
+                result_str = "Error: Invalid conversion expression"
+
+            # Update the history entry
+            GLib.idle_add(self._update_conversion_result, text, result_str)
+
+        GLib.Thread.new("conversion", do_conversion, None)
+
+    def _update_conversion_result(self, text, result_str):
+        # Replace the loading entry with the result
+        if self.conversion_history and self.conversion_history[0].startswith(f"{text} => Loading"):
+            self.conversion_history[0] = f"{text} => {result_str}"
+        else:
+            # Fallback: insert new
+            self.conversion_history.insert(0, f"{text} => {result_str}")
         self.save_conversion_history()
         self.update_conversion_viewport()
         

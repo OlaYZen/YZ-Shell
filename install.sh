@@ -22,11 +22,15 @@ PACKAGES=(
   imagemagick
   libnotify
   matugen-bin
+  network-manager-applet
+  networkmanager
+  nm-connection-editor
   noto-fonts-emoji
   nvtop
   openresolv
   playerctl
   python-dateutil
+  power-profiles-daemon
   python-fabric-git
   python-gobject
   python-icalendar
@@ -43,6 +47,8 @@ PACKAGES=(
   swappy
   swww-git
   tesseract
+  tesseract-data-eng
+  tesseract-data-spa
   tmux
   ttf-nerd-fonts-symbols-mono
   unzip
@@ -111,6 +117,33 @@ if [ ! -d "$FONT_DIR" ]; then
     rm "$TEMP_ZIP"
 else
     echo "Fonts are already installed. Skipping download and extraction."
+fi
+
+# Network services handling
+echo "Configuring network services..."
+
+# Disable iwd if enabled/active
+if systemctl is-enabled --quiet iwd 2>/dev/null || systemctl is-active --quiet iwd 2>/dev/null; then
+    echo "Disabling iwd..."
+    sudo systemctl disable --now iwd
+else
+    echo "iwd is already disabled."
+fi
+
+# Enable NetworkManager if not enabled
+if ! systemctl is-enabled --quiet NetworkManager 2>/dev/null; then
+    echo "Enabling NetworkManager..."
+    sudo systemctl enable NetworkManager
+else
+    echo "NetworkManager is already enabled."
+fi
+
+# Start NetworkManager if not running
+if ! systemctl is-active --quiet NetworkManager 2>/dev/null; then
+    echo "Starting NetworkManager..."
+    sudo systemctl start NetworkManager
+else
+    echo "NetworkManager is already running."
 fi
 
 # Copy local fonts if not already present

@@ -2,6 +2,17 @@
   margin: 0 20px 10px 20px;
 }
 
+#notch-hover-eventbox {
+  background-color: transparent;
+  min-height: 4px;
+  min-width: 260px;
+}
+
+#notch-hover-detection {
+  background-color: transparent;
+  min-height: 4px;
+}
+
 #notch-wrap {
   transition: all 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }

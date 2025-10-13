@@ -27,7 +27,7 @@ CURRENT_HEIGHT = screen.get_height()
 
 icon_resolver = IconResolver()
 connection = Hyprland()
-SCALE = 0.1
+BASE_SCALE = 0.1  # Base scale factor for overview
 
 # Credit to Aylur for the drag and drop code
 TARGET = [Gtk.TargetEntry.new("text/plain", Gtk.TargetFlags.SAME_APP, 0)]
@@ -175,13 +175,22 @@ class HyprlandWindowButton(Button):
 
 
 class WorkspaceEventBox(EventBox):
-    def __init__(self, workspace_id: int, fixed: Gtk.Fixed | None = None):
+    def __init__(self, workspace_id: int, fixed: Gtk.Fixed | None = None, monitor_width: int = None, monitor_height: int = None, monitor_scale: float = 1.0):
         self.fixed = fixed
+        
+        # Use provided monitor dimensions or fallback to current screen
+        width = monitor_width or CURRENT_WIDTH
+        height = monitor_height or CURRENT_HEIGHT
+        
+        # Workspace containers should maintain consistent size across monitors
+        # Only use BASE_SCALE, don't multiply by monitor_scale for the container
+        container_scale = BASE_SCALE
+        
         super().__init__(
             name="overview-workspace-bg",
             h_expand=True,
             v_expand=True,
-            size=(int(CURRENT_WIDTH * SCALE), int(CURRENT_HEIGHT * SCALE)),
+            size=(int(width * container_scale), int(height * container_scale)),
             child=fixed
             if fixed
             else Label(
@@ -205,7 +214,30 @@ class WorkspaceEventBox(EventBox):
 
 
 class Overview(Box):
-    def __init__(self, **kwargs):
+    def __init__(self, monitor_id: int = 0, **kwargs):
+        self.monitor_id = monitor_id
+        self.monitor_manager = None
+        self.workspace_start = 1
+        self.workspace_end = 10
+        
+        # Get monitor manager and workspace range
+        try:
+            from utils.monitor_manager import get_monitor_manager
+            self.monitor_manager = get_monitor_manager()
+            self.workspace_start, self.workspace_end = self.monitor_manager.get_workspace_range_for_monitor(monitor_id)
+        except ImportError:
+            # Fallback if monitor manager not available
+            pass
+        
+        # Get monitor dimensions
+        monitor_width = CURRENT_WIDTH
+        monitor_height = CURRENT_HEIGHT
+        
+        if self.monitor_manager:
+            monitor_info = self.monitor_manager.get_monitor_by_id(monitor_id)
+            if monitor_info:
+                monitor_width = monitor_info['width']
+                monitor_height = monitor_info['height']
         # Initialize as a Box instead of a PopupWindow.
         super().__init__(name="overview", orientation="v", spacing=8, **kwargs)
         self.workspace_boxes: dict[int, Box] = {}
@@ -337,34 +369,54 @@ class Overview(Box):
 
         self.children = [Box(spacing=8) for _ in range(rows)]
 
+        # Get monitor dimensions and scale for scaling
+        monitor_width = CURRENT_WIDTH
+        monitor_height = CURRENT_HEIGHT
+        monitor_scale = 1.0
+        
+        if self.monitor_manager:
+            monitor_info = self.monitor_manager.get_monitor_by_id(self.monitor_id)
+            if monitor_info:
+                monitor_width = monitor_info['width']
+                monitor_height = monitor_info['height']
+                monitor_scale = monitor_info.get('scale', 1.0)
+        
+        # Calculate effective scale for this monitor
+        # Higher scale monitors need larger overview elements to appear the same physical size
+        effective_scale = BASE_SCALE * monitor_scale
+
         monitors = {
             monitor["id"]: (monitor["x"], monitor["y"], monitor["transform"])
             for monitor in json.loads(connection.send_command("j/monitors").reply.decode())
         }
+        
+        # Filter clients to only show those in this monitor's workspace range
         for client in json.loads(connection.send_command("j/clients").reply.decode()):
-            if client["workspace"]["id"] > 0:
+            workspace_id = client["workspace"]["id"]
+            if workspace_id > 0 and self.workspace_start <= workspace_id <= self.workspace_end:
                 btn = HyprlandWindowButton(
                     window=self,
                     title=client["title"],
                     address=client["address"],
                     app_id=client["initialClass"],
-                    size=(client["size"][0] * SCALE, client["size"][1] * SCALE),
+                    size=(client["size"][0] * effective_scale, client["size"][1] * effective_scale),
                     transform=monitors[client["monitor"]][2],
                 )
                 self.clients[client["address"]] = btn
-                w_id = client["workspace"]["id"]
+                w_id = workspace_id
                 if w_id not in self.workspace_boxes:
                     self.workspace_boxes[w_id] = Gtk.Fixed.new()
                 self.workspace_boxes[w_id].put(
                     btn,
-                    abs(client["at"][0] - monitors[client["monitor"]][0]) * SCALE,
-                    abs(client["at"][1] - monitors[client["monitor"]][1]) * SCALE,
+                    abs(client["at"][0] - monitors[client["monitor"]][0]) * effective_scale,
+                    abs(client["at"][1] - monitors[client["monitor"]][1]) * effective_scale,
                 )
 
-        for w_id in range(1, 11):
-            idx = w_id - 1
+        # Generate workspaces only for this monitor's range
+        for w_id in range(self.workspace_start, self.workspace_end + 1):
+            idx = w_id - self.workspace_start
             if rows == 2:
-                row = 0 if w_id <= cols else 1
+                row = 0 if idx < cols else 1
             else:
                 row = idx // cols
             overview_row = self.children[row]
@@ -376,7 +428,10 @@ class Overview(Box):
                         Label(name="overview-workspace-label", label=f"Workspace {w_id}"),
                         WorkspaceEventBox(
                             w_id,
-                            self.workspace_boxes.get(w_id)
+                            self.workspace_boxes.get(w_id),
+                            monitor_width=monitor_width,
+                            monitor_height=monitor_height,
+                            monitor_scale=monitor_scale
                         ),
                     ],
                 )

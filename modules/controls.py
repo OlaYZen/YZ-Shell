@@ -30,6 +30,9 @@ class VolumeSlider(Scale):
             self.audio.speaker.connect("changed", self.on_speaker_changed)
         self.connect("value-changed", self.on_value_changed)
         self.add_style_class("vol")
+        self._pending_value = None
+        self._update_source_id = None
+        self._debounce_timeout = 100
         self.on_speaker_changed()
 
     def on_new_speaker(self, *args):
@@ -39,7 +42,17 @@ class VolumeSlider(Scale):
 
     def on_value_changed(self, _):
         if self.audio.speaker:
-            self.audio.speaker.volume = self.value * 100
+            self._pending_value = self.value * 100
+            if self._update_source_id is not None:
+                GLib.source_remove(self._update_source_id)
+            self._update_source_id = GLib.timeout_add(self._debounce_timeout, self._update_volume_callback)
+
+    def _update_volume_callback(self):
+        if self._pending_value is not None and self.audio.speaker:
+            self.audio.speaker.volume = self._pending_value
+            self._pending_value = None
+        self._update_source_id = None
+        return False
 
     def on_speaker_changed(self, *_):
         if not self.audio.speaker:
@@ -111,6 +124,7 @@ class BrightnessSlider(Scale):
         self._pending_value = None
         self._update_source_id = None
         self._updating_from_brightness = False
+        self._debounce_timeout = 100
 
         self.connect("change-value", self.on_scale_move)
         self.connect("scroll-event", self.on_scroll)
@@ -120,8 +134,9 @@ class BrightnessSlider(Scale):
         if self._updating_from_brightness:
             return False
         self._pending_value = moved_pos
-        if self._update_source_id is None:
-            self._update_source_id = GLib.idle_add(self._update_brightness_callback)
+        if self._update_source_id is not None:
+            GLib.source_remove(self._update_source_id)
+        self._update_source_id = GLib.timeout_add(self._debounce_timeout, self._update_brightness_callback)
         return False
 
     def _update_brightness_callback(self):
@@ -130,7 +145,8 @@ class BrightnessSlider(Scale):
             self._pending_value = None
             if value_to_set != self.client.screen_brightness:
                 self.client.screen_brightness = value_to_set
-            return True
+            self._update_source_id = None
+            return False
         else:
             self._update_source_id = None
             return False
@@ -195,6 +211,7 @@ class BrightnessSmall(Box):
         self._updating_from_brightness = False
         self._pending_value = None
         self._update_source_id = None
+        self._debounce_timeout = 100
 
         self.progress_bar.connect("notify::value", self.on_progress_value_changed)
         self.brightness.connect("screen", self.on_brightness_changed)
@@ -220,17 +237,16 @@ class BrightnessSmall(Box):
         new_norm = widget.value
         new_brightness = int(new_norm * self.brightness.max_screen)
         self._pending_value = new_brightness
-        if self._update_source_id is None:
-            self._update_source_id = GLib.timeout_add(50, self._update_brightness_callback)
+        if self._update_source_id is not None:
+            GLib.source_remove(self._update_source_id)
+        self._update_source_id = GLib.timeout_add(self._debounce_timeout, self._update_brightness_callback)
 
     def _update_brightness_callback(self):
         if self._pending_value is not None and self._pending_value != self.brightness.screen_brightness:
             self.brightness.screen_brightness = self._pending_value
             self._pending_value = None
-            return True
-        else:
-            self._update_source_id = None
-            return False
+        self._update_source_id = None
+        return False
 
     def on_brightness_changed(self, *args):
         if self.brightness.max_screen == -1:
@@ -460,7 +476,7 @@ class BrightnessIcon(Box):
         
         self._pending_value = new_brightness
         if self._update_source_id is None:
-            self._update_source_id = GLib.timeout_add(50, self._update_brightness_callback)
+            self._update_source_id = GLib.timeout_add(100, self._update_brightness_callback)
     
     def _update_brightness_callback(self):
         if self._pending_value is not None and self._pending_value != self.brightness.screen_brightness:
@@ -520,7 +536,7 @@ class VolumeIcon(Box):
         if self.audio.speaker:
             self.audio.speaker.connect("changed", self.on_speaker_changed)
 
-        self._periodic_update_source_id = GLib.timeout_add_seconds(1, self.update_device_icon)
+        self._periodic_update_source_id = GLib.timeout_add_seconds(2, self.update_device_icon)
         self.add_events(Gdk.EventMask.SCROLL_MASK | Gdk.EventMask.SMOOTH_SCROLL_MASK)
 
     def on_scroll(self, _, event):
@@ -547,7 +563,7 @@ class VolumeIcon(Box):
                 
         self._pending_value = new_volume
         if self._update_source_id is None:
-            self._update_source_id = GLib.timeout_add(50, self._update_volume_callback)
+            self._update_source_id = GLib.timeout_add(100, self._update_volume_callback)
             
     def _update_volume_callback(self):
         if self._pending_value is not None and self._pending_value != self.audio.speaker.volume:
@@ -683,7 +699,7 @@ class MicIcon(Box):
                 
         self._pending_value = new_volume
         if self._update_source_id is None:
-            self._update_source_id = GLib.timeout_add(50, self._update_volume_callback)
+            self._update_source_id = GLib.timeout_add(100, self._update_volume_callback)
             
     def _update_volume_callback(self):
         if self._pending_value is not None and self._pending_value != self.audio.microphone.volume:

@@ -10,7 +10,7 @@ import modules.icons as icons
 from modules.ical_events import ical_manager
 
 gi.require_version("Gtk", "3.0")
-from gi.repository import GLib, Gtk
+from gi.repository import GLib, Gtk, Gio
 
 
 class Calendar(Gtk.Box):
@@ -70,6 +70,63 @@ class Calendar(Gtk.Box):
 
         self.update_header()
         self.update_calendar()
+        self.setup_periodic_update()
+        self.setup_dbus_listeners()
+
+        # Initialize locale settings asynchronously
+        GLib.Thread.new("calendar-locale", self._init_locale_settings_thread, None)
+
+    def _init_locale_settings_thread(self, user_data):
+        """Background thread to initialize locale settings without blocking UI."""
+        try:
+            origin_date_str = subprocess.check_output(["locale", "week-1stday"], text=True).strip()
+            first_weekday_val = int(subprocess.check_output(["locale", "first_weekday"], text=True).strip())
+            
+            origin_date = datetime.fromisoformat(origin_date_str)
+            # Esta lógica calcula el día de la semana (0-6, Lunes=0) que es considerado el primero
+            # según la configuración regional combinada de week-1stday y first_weekday.
+            date_of_first_day_of_week_config = origin_date + timedelta(days=first_weekday_val - 1)
+            new_first_weekday = date_of_first_day_of_week_config.weekday() # Lunes=0, ..., Domingo=6
+            
+            # Update the first_weekday on main thread and refresh calendar if needed
+            GLib.idle_add(self._update_first_weekday, new_first_weekday)
+        except Exception as e:
+            print(f"Error getting locale first weekday: {e}")
+            # Keep default value (0 = Monday)
+    
+    def _update_first_weekday(self, new_first_weekday):
+        """Update first weekday setting and refresh calendar if changed."""
+        if self.first_weekday != new_first_weekday:
+            self.first_weekday = new_first_weekday
+            # Clear cache and refresh calendar with new locale settings
+            self.month_views.clear()
+            # Remove all current stack children to force regeneration
+            for child in self.stack.get_children():
+                self.stack.remove(child)
+            # Update header (which includes weekday labels) and calendar
+            self.update_header()
+            self.update_calendar()
+        return False  # Don't repeat this idle callback
+
+    def setup_periodic_update(self):
+        # Check for date changes every second
+        GLib.timeout_add(1000, self.check_date_change)
+
+    def setup_dbus_listeners(self):
+        # Listen for system suspend/resume events
+        bus = Gio.bus_get_sync(Gio.BusType.SYSTEM, None)
+        bus.signal_subscribe(
+            None,  # sender
+            'org.freedesktop.login1.Manager',  # interface
+            'PrepareForSleep',  # signal
+            '/org/freedesktop/login1',  # path
+            None,  # arg0
+            Gio.DBusSignalFlags.NONE,
+            self.on_suspend_resume,  # callback
+            None  # user_data
+        )
+
+    def check_date_change(self):
         self.schedule_midnight_update()
         
         # Register for iCal event updates
@@ -86,7 +143,6 @@ class Calendar(Gtk.Box):
 
     def schedule_midnight_update(self):
         now = datetime.now()
-
         midnight = now.replace(hour=0, minute=0, second=0, microsecond=0) + timedelta(days=1)
         delta = midnight - now
         seconds_until = delta.total_seconds()
@@ -103,9 +159,15 @@ class Calendar(Gtk.Box):
             widget = self.month_views.pop(key)
             self.stack.remove(widget)
 
-        self.update_calendar()
+        self.update_calendar() # Esto regenerará la vista si fue eliminada y actualizará el resaltado
         self.schedule_midnight_update()
-        return False
+        return False # Importante para que el timeout no se repita automáticamente
+
+    def on_suspend_resume(self, connection, sender_name, object_path, interface_name, signal_name, parameters):
+        """Handle system suspend/resume events to update calendar"""
+        # Update calendar when system resumes from suspend
+        self.update_calendar()
+        return True
 
     def update_header(self):
 

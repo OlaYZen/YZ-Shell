@@ -70,17 +70,15 @@ def get_favicon_url(url):
 def download_favicon(url, callback):
     """Download a favicon asynchronously and call the callback with the result."""
     favicon_url = get_favicon_url(url)
-    
+
     def do_download():
         temp_file = None
         try:
-
             temp_fd, temp_path = tempfile.mkstemp(suffix='.ico')
             os.close(temp_fd)
-            
+            temp_file = temp_path
 
             urllib.request.urlretrieve(favicon_url, temp_path)
-            
 
             GLib.idle_add(callback, temp_path)
         except Exception as e:
@@ -92,10 +90,8 @@ def download_favicon(url, callback):
                 except:
                     pass
             GLib.idle_add(callback, None)
-        return False
-    
 
-    GLib.idle_add(do_download)
+    GLib.Thread.new("favicon-download", do_download, None)
 
 class FileChangeHandler(FileSystemEventHandler):
     def __init__(self, app):

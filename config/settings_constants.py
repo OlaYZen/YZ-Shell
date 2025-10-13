@@ -1,6 +1,12 @@
-from .data import (APP_NAME, APP_NAME_CAP, NOTIF_POS_DEFAULT, NOTIF_POS_KEY,
-                   PANEL_POSITION_DEFAULT, PANEL_POSITION_KEY,
-                   WALLPAPERS_DIR_DEFAULT)
+from .data import (
+    APP_NAME,
+    APP_NAME_CAP,
+    NOTIF_POS_DEFAULT,
+    NOTIF_POS_KEY,
+    PANEL_POSITION_DEFAULT,
+    PANEL_POSITION_KEY,
+    WALLPAPERS_DIR_DEFAULT,
+)
 
 SOURCE_STRING = f"""
 # {APP_NAME_CAP}
@@ -38,8 +44,6 @@ DEFAULTS = {
     'suffix_emoji': "PERIOD",
     'prefix_power': "SUPER",
     'suffix_power': "ESCAPE",
-    'prefix_weather': "SUPER",
-    'suffix_weather': "W",
     'prefix_caffeine': "SUPER SHIFT",
     'suffix_caffeine': "M",
     'prefix_toggle': "SUPER CTRL",
@@ -54,6 +58,7 @@ DEFAULTS = {
     'centered_bar': False,
     'datetime_12h_format': False,
     'datetime_show_seconds': True,
+    'datetime_12h_format': False,  # Add this line
     'terminal_command': "kitty -e",
     'dock_enabled': True,
     'dock_icon_size': 28,
@@ -78,7 +83,6 @@ DEFAULTS = {
     'bar_language_visible': True,
     'bar_date_time_visible': True,
     'bar_button_power_visible': True,
-    'bar_controller_battery_visible': True,
     'corners_visible': True,
     'bar_metrics_disks': ["/"],
     'metrics_visible': {
@@ -87,13 +91,16 @@ DEFAULTS = {
         'disk': True,
         'gpu': True,
     },
-    'metrics_small_visible': {
-        'cpu': True,
-        'ram': True,
-        'disk': True,
-        'gpu': True,
+    "metrics_small_visible": {
+        "cpu": True,
+        "ram": True,
+        "disk": True,
+        "gpu": True,
     },
     'ical_sources': [],
     'player_cover_spinning': True,
     'settings_window_resizable': False,
+    "limited_apps_history": ["Spotify"],
+    "history_ignored_apps": ["Hyprshot"],
+    "selected_monitors": [],
 }
