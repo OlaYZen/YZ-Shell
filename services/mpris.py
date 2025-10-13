@@ -102,7 +102,7 @@ class MprisPlayer(Service):
                 self._player.disconnect(id)
         del self._signal_connectors
         GLib.idle_add(lambda: (self.emit("exit", True), False))
-        del self._player
+        self._player = None  # Set to None instead of deleting
 
     def toggle_shuffle(self):
         if self.can_shuffle:
@@ -111,32 +111,39 @@ class MprisPlayer(Service):
         # else do nothing
 
     def play_pause(self):
-        if self.can_pause:
+        if self.can_pause and self._player is not None:
             GLib.idle_add(lambda: (self._player.play_pause(), False))
 
     def next(self):
-        if self.can_go_next:
+        if self.can_go_next and self._player is not None:
             GLib.idle_add(lambda: (self._player.next(), False))
 
     def previous(self):
-        if self.can_go_previous:
+        if self.can_go_previous and self._player is not None:
             GLib.idle_add(lambda: (self._player.previous(), False))
 
     # Properties
     @Property(str, "readable")
     def player_name(self) -> int:
+        if self._player is None:
+            return ""
         return self._player.get_property("player-name")  # type: ignore
 
     @Property(int, "read-write", default_value=0)
     def position(self) -> int:
+        if self._player is None:
+            return 0
         return self._player.get_property("position")  # type: ignore
 
     @position.setter
     def position(self, new_pos: int):
-        self._player.set_position(new_pos)
+        if self._player is not None:
+            self._player.set_position(new_pos)
 
     @Property(object, "readable")
     def metadata(self) -> dict:
+        if self._player is None:
+            return {}
         return self._player.get_property("metadata")  # type: ignore
 
     @Property(str or None, "readable")
@@ -153,6 +160,8 @@ class MprisPlayer(Service):
 
     @Property(str, "readable")
     def artist(self) -> str:
+        if self._player is None:
+            return ""
         artist = self._player.get_artist()  # type: ignore
         if isinstance(artist, (list, tuple)):
             return ", ".join(artist)
@@ -160,6 +169,8 @@ class MprisPlayer(Service):
 
     @Property(str, "readable")
     def album(self) -> str:
+        if self._player is None:
+            return ""
         return self._player.get_album()  # type: ignore
 
     @Property(str, "readable")
@@ -171,15 +182,20 @@ class MprisPlayer(Service):
 
     @Property(bool, "read-write", default_value=False)
     def shuffle(self) -> bool:
+        if self._player is None:
+            return False
         return self._player.get_property("shuffle")  # type: ignore
 
     @shuffle.setter
     def shuffle(self, do_shuffle: bool):
         self.notifier("shuffle")
-        return self._player.set_shuffle(do_shuffle)
+        if self._player is not None:
+            return self._player.set_shuffle(do_shuffle)
 
     @Property(str, "readable")
     def playback_status(self) -> str:
+        if self._player is None:
+            return "stopped"
         return {
             Playerctl.PlaybackStatus.PAUSED: "paused",
             Playerctl.PlaybackStatus.PLAYING: "playing",
@@ -188,6 +204,8 @@ class MprisPlayer(Service):
 
     @Property(str, "read-write")
     def loop_status(self) -> str:
+        if self._player is None:
+            return "none"
         return {
             Playerctl.LoopStatus.NONE: "none",
             Playerctl.LoopStatus.TRACK: "track",
@@ -196,31 +214,42 @@ class MprisPlayer(Service):
 
     @loop_status.setter
     def loop_status(self, status: str):
-        loop_status = {
-            "none": Playerctl.LoopStatus.NONE,
-            "track": Playerctl.LoopStatus.TRACK,
-            "playlist": Playerctl.LoopStatus.PLAYLIST,
-        }.get(status)
-        self._player.set_loop_status(loop_status) if loop_status else None
+        if self._player is not None:
+            loop_status = {
+                "none": Playerctl.LoopStatus.NONE,
+                "track": Playerctl.LoopStatus.TRACK,
+                "playlist": Playerctl.LoopStatus.PLAYLIST,
+            }.get(status)
+            self._player.set_loop_status(loop_status) if loop_status else None
 
     @Property(bool, "readable", default_value=False)
     def can_go_next(self) -> bool:
+        if self._player is None:
+            return False
         return self._player.get_property("can_go_next")  # type: ignore
 
     @Property(bool, "readable", default_value=False)
     def can_go_previous(self) -> bool:
+        if self._player is None:
+            return False
         return self._player.get_property("can_go_previous")  # type: ignore
 
     @Property(bool, "readable", default_value=False)
     def can_seek(self) -> bool:
+        if self._player is None:
+            return False
         return self._player.get_property("can_seek")  # type: ignore
 
     @Property(bool, "readable", default_value=False)
     def can_pause(self) -> bool:
+        if self._player is None:
+            return False
         return self._player.get_property("can_pause")  # type: ignore
 
     @Property(bool, "readable", default_value=False)
     def can_shuffle(self) -> bool:
+        if self._player is None:
+            return False
         try:
             self._player.set_shuffle(self._player.get_property("shuffle"))
             return True
@@ -229,6 +258,8 @@ class MprisPlayer(Service):
 
     @Property(bool, "readable", default_value=False)
     def can_loop(self) -> bool:
+        if self._player is None:
+            return False
         try:
             self._player.set_shuffle(self._player.get_property("shuffle"))
             return True

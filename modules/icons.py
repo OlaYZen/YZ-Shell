@@ -149,6 +149,7 @@ config: str = "&#xeb20;"
 firefox: str = "&#xecfd;"
 chromium: str = "&#xec18;"
 spotify: str = "&#xfe86;"
+tidal: str = "&#xed70;"
 disc: str = "&#x1003e;"
 disc_off: str = "&#xf118;"
 

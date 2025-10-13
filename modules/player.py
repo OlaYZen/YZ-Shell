@@ -23,16 +23,33 @@ vertical_mode = False
 if data.PANEL_THEME == "Panel" and (data.BAR_POSITION in ["Left", "Right"] or data.PANEL_POSITION in ["Start", "End"]):
     vertical_mode = True
 
-def get_player_icon_markup_by_name(player_name):
+def get_player_icon_markup_by_name(player_name, mpris_player=None):
     if player_name:
         pn = player_name.lower()
         if pn == "firefox":
             return icons.firefox
         elif pn == "spotify":
             return icons.spotify
+        elif pn == "tidal-hifi":
+            return icons.tidal
         elif pn in ("chromium", "brave"):
+            # Try to detect Tidal by checking if tidal-hifi process is running
+            try:
+                import subprocess
+                # Check if tidal-hifi process is running
+                result = subprocess.run(['pgrep', '-f', 'tidal-hifi'], capture_output=True, text=True)
+                if result.returncode == 0 and result.stdout.strip():
+                    # Tidal HiFi is running, this chromium instance is likely Tidal
+                    return icons.tidal
+                    
+            except Exception:
+                pass
             return icons.chromium
     return icons.disc
+
+
+
+
 
 def add_hover_cursor(widget):
     widget.add_events(Gdk.EventMask.ENTER_NOTIFY_MASK | Gdk.EventMask.LEAVE_NOTIFY_MASK)
@@ -626,7 +643,13 @@ class Player(Box):
                         break
                 if default_label:
                     label_player_name = getattr(default_label, "player_name", default_label.get_text().lower())
-                    icon_markup = get_player_icon_markup_by_name(label_player_name)
+                    # Find the corresponding PlayerBox to get the mpris_player
+                    mpris_player = None
+                    for child in self.player_stack.get_children():
+                        if hasattr(child, "mpris_player") and child.mpris_player and child.mpris_player.player_name.lower() == label_player_name:
+                            mpris_player = child.mpris_player
+                            break
+                    icon_markup = get_player_icon_markup_by_name(label_player_name, mpris_player)
                     btn.remove(default_label)
                     new_label = Label(name="player-label", markup=icon_markup)
                     new_label.player_name = label_player_name
@@ -645,7 +668,13 @@ class Player(Box):
                 if default_label:
                     label_player_name = getattr(default_label, "player_name", default_label.get_text().lower())
                     if label_player_name == player_name.lower():
-                        icon_markup = get_player_icon_markup_by_name(player_name)
+                        # Find the corresponding PlayerBox to get the mpris_player
+                        mpris_player = None
+                        for child in self.player_stack.get_children():
+                            if hasattr(child, "mpris_player") and child.mpris_player and child.mpris_player.player_name.lower() == player_name.lower():
+                                mpris_player = child.mpris_player
+                                break
+                        icon_markup = get_player_icon_markup_by_name(player_name, mpris_player)
                         btn.remove(default_label)
                         new_label = Label(name="player-label", markup=icon_markup)
                         new_label.player_name = player_name.lower()
@@ -757,7 +786,7 @@ class PlayerSmall(CenterBox):
         mp = self.mpris_player
 
         player_name = mp.player_name.lower() if hasattr(mp, "player_name") and mp.player_name else ""
-        icon_markup = get_player_icon_markup_by_name(player_name)
+        icon_markup = get_player_icon_markup_by_name(player_name, mp)
         self.mpris_icon.get_child().set_markup(icon_markup)
         self.update_play_pause_icon()
 

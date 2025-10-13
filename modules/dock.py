@@ -574,10 +574,15 @@ class Dock(Window):
         if not instances:
             if not desktop_app: desktop_app = self.find_app(app_identifier)
             if desktop_app:
-                launch_success = desktop_app.launch()
-                if not launch_success:
-                    if desktop_app.command_line: exec_shell_command_async(f"nohup {desktop_app.command_line} &")
-                    elif desktop_app.executable: exec_shell_command_async(f"nohup {desktop_app.executable} &")
+                # Special handling for Tidal HiFi to add required flags
+                if hasattr(desktop_app, 'name') and desktop_app.name and 'tidal' in desktop_app.name.lower():
+                    # Launch Tidal HiFi with required flags to avoid zygote error
+                    exec_shell_command_async("nohup tidal-hifi --no-sandbox --disable-gpu-sandbox --enable-features=UseOzonePlatform --ozone-platform-hint=auto --enable-features=WaylandWindowDecorations &")
+                else:
+                    launch_success = desktop_app.launch()
+                    if not launch_success:
+                        if desktop_app.command_line: exec_shell_command_async(f"nohup {desktop_app.command_line} &")
+                        elif desktop_app.executable: exec_shell_command_async(f"nohup {desktop_app.executable} &")
             else:
                 cmd_to_run = None
                 if isinstance(app_identifier, dict):

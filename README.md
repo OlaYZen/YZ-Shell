@@ -135,6 +135,8 @@ This fork includes several improvements over the original YZ-Shell:
 ### **🎵 Media Controls**
 - **Playback Indicators**: Media artwork features a rotation animation during playback and stops when paused or idle, creating a vinyl record effect that provides visual feedback for media state
 - **Toggleable**: Cover art spinning can be enabled/disabled in settings (enabled by default)
+- **Tidal HiFi Support**: Full MPRIS integration with dedicated icon and launch support
+  - Install via AUR: `yay -S tidal-hifi-bin`
 
 ### **📡 Network Management**
 - **WiFi Connection**: Detection and prioritization of saved networks with one-click reconnection
@@ -276,7 +278,7 @@ This fork includes several improvements over the original YZ-Shell:
 ### **Media & Screenshot Tools**
 - **Screenshot Suite** - Region, fullscreen, window captures with mockup mode
 - **Screen Recorder** - High-quality video recording
-- **Media Player Controls** - MPRIS integration for all media players
+- **Media Player Controls** - MPRIS integration for all media players (Spotify, Tidal HiFi, Firefox, etc.)
 - **Wallpaper Manager** - Dynamic wallpaper switching with color theming
 
 ### **Customization & Theming**
@@ -527,6 +529,8 @@ curl -fsSL https://raw.githubusercontent.com/OlaYZen/YZ-Shell/main/install.sh | 
   - **Left Click**: Previous track
   - **Middle Click**: Play/pause toggle
   - **Right Click**: Next track
+
+> **Supported Players**: Spotify, Tidal HiFi, Firefox, Chromium, and any MPRIS-compatible media player
 
 **📌 Pin Manager**
 - **Empty Cells**:

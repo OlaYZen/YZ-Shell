@@ -315,10 +315,20 @@ class AppLauncher(Box):
                 ],
             ),
             tooltip_text=app.description,
-            on_clicked=lambda *_: (app.launch(), self.close_launcher()),
+            on_clicked=lambda *_: (self.launch_app(app), self.close_launcher()),
             **kwargs,
         )
         return button
+
+    def launch_app(self, app):
+        """Launch an application with special handling for Tidal HiFi"""
+        # Special handling for Tidal HiFi to add required flags
+        if hasattr(app, 'name') and app.name and 'tidal' in app.name.lower():
+            # Launch Tidal HiFi with required flags to avoid zygote error
+            exec_shell_command_async("nohup tidal-hifi --no-sandbox --disable-gpu-sandbox --enable-features=UseOzonePlatform --ozone-platform-hint=auto --enable-features=WaylandWindowDecorations &")
+        else:
+            # Normal app launch
+            app.launch()
 
     def update_selection(self, new_index: int):
 
