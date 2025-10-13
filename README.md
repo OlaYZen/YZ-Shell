@@ -445,8 +445,8 @@ curl -fsSL https://raw.githubusercontent.com/OlaYZen/YZ-Shell/main/install.sh | 
 ```
 
 ### NixOS
-[poogas](https://github.com/poogas) has created a flake for YZ-Shell.
-👉 [Try it out!](https://github.com/poogas/YZ-Shell) 👈
+[poogas](https://github.com/poogas) has created a flake for Ax-Shell.
+👉 [Try it out!](https://github.com/poogas/Ax-Shell) 👈
 
 
 ## 📖 Usage Guide
