@@ -1053,7 +1053,7 @@ class HyprConfGUI(Window):
         )
         repo_box = Box(orientation="h", spacing=6, h_align="start")
         repo_label = Label(label="GitHub:", h_align="start")
-        repo_link = Label(markup='<a href="https://github.com/Axenide/YZ-Shell">https://github.com/Axenide/YZ-Shell</a>')
+        repo_link = Label(markup='<a href="https://github.com/OlaYZen/YZ-Shell">https://github.com/OlaYZen/YZ-Shell</a>')
         repo_box.add(repo_label); repo_box.add(repo_link)
         vbox.add(repo_box)
         def on_kofi_clicked(_): import webbrowser; webbrowser.open("https://ko-fi.com/Axenide")
