@@ -410,6 +410,38 @@ class VpnConnections(Box):
             if "incorrect password" in stderr_lower or "try again" in stderr_lower:
                 print("Incorrect sudo password detected in exception.")
                 return False, "Incorrect sudo password"
+            # If resolvconf reports a signature mismatch, try to repair and retry once
+            if action == "up" and "resolvconf" in stderr_lower and "signature mismatch" in stderr_lower:
+                try:
+                    repair_cmd = ["sudo", "-k", "-S", "resolvconf", "-u"]
+                    print("Detected resolvconf signature mismatch. Running 'resolvconf -u' and retrying wg-quick up once...")
+                    subprocess.run(
+                        repair_cmd,
+                        check=False,
+                        stdout=subprocess.PIPE,
+                        stderr=subprocess.PIPE,
+                        input=sudo_password + "\n",
+                        text=True,
+                        timeout=10,
+                    )
+                    # Retry wg-quick up once after repair
+                    retry_proc = subprocess.run(
+                        cmd,
+                        check=True,
+                        stdout=subprocess.PIPE,
+                        stderr=subprocess.PIPE,
+                        input=sudo_password + "\n",
+                        text=True,
+                        timeout=15,
+                    )
+                    print(f"Retry after resolvconf -u succeeded: {retry_proc.stdout}")
+                    return True, retry_proc.stdout
+                except subprocess.CalledProcessError as retry_err:
+                    print(f"Retry after resolvconf -u failed: {retry_err.stderr}")
+                    return False, retry_err.stderr
+                except subprocess.TimeoutExpired:
+                    print("Retry after resolvconf -u timed out")
+                    return False, "Retry timed out"
             print(f"Command failed: {e.stderr}")
             return False, e.stderr
         except subprocess.TimeoutExpired:

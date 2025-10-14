@@ -1353,6 +1353,34 @@ class VpnButton(Box):
             stderr_lower = e.stderr.lower() if e.stderr else ""
             if "incorrect password" in stderr_lower or "try again" in stderr_lower:
                 return False, "Incorrect sudo password"
+            # Handle resolvconf signature mismatch by updating resolvconf and retrying once
+            if action == "up" and "resolvconf" in stderr_lower and "signature mismatch" in stderr_lower:
+                try:
+                    repair_cmd = ["sudo", "-k", "-S", "resolvconf", "-u"]
+                    subprocess.run(
+                        repair_cmd,
+                        check=False,
+                        stdout=subprocess.PIPE,
+                        stderr=subprocess.PIPE,
+                        input=sudo_password + "\n",
+                        text=True,
+                        timeout=10,
+                    )
+                    # Retry the wg-quick command after repair
+                    retry_proc = subprocess.run(
+                        cmd,
+                        check=True,
+                        stdout=subprocess.PIPE,
+                        stderr=subprocess.PIPE,
+                        input=sudo_password + "\n",
+                        text=True,
+                        timeout=15,
+                    )
+                    return True, retry_proc.stdout
+                except subprocess.CalledProcessError as retry_err:
+                    return False, retry_err.stderr
+                except subprocess.TimeoutExpired:
+                    return False, "Retry timed out"
             return False, e.stderr
         except subprocess.TimeoutExpired:
             return False, "Command timed out"

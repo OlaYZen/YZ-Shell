@@ -41,6 +41,14 @@ if __name__ == "__main__":
     # Every hour
     GLib.timeout_add(3600000, run_updater)
 
+    # Auto-start idle inhibitor if configured
+    if config.get("caffeine_on_start", False):
+        try:
+            # Only start if not already running
+            os.system("pgrep yz-inhibit >/dev/null 2>&1 || nohup python ~/.config/%s/scripts/inhibit.py >/dev/null 2>&1 &" % APP_NAME_CAP)
+        except Exception as e:
+            print(f"Failed to auto-start yz-inhibit: {e}")
+
     # Initialize multi-monitor services
     try:
         from utils.monitor_manager import get_monitor_manager

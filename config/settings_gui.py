@@ -577,7 +577,8 @@ class HyprConfGUI(Window):
         )
 
         notification_pos_combo_container.add(self.notification_pos_combo)
-        layout_grid.attach(notification_pos_combo_container, 1, 7, 3, 1)
+        # Attach to row 8 (same as label) and span 1 column to avoid oversized background
+        layout_grid.attach(notification_pos_combo_container, 1, 8, 1, 1)
 
         separator2 = Box(
             style="min-height: 1px; background-color: alpha(@fg_color, 0.2); margin: 5px 0px;",
@@ -766,6 +767,26 @@ class HyprConfGUI(Window):
             h_align="start",
         )
         system_grid.attach(hint_label, 0, 5, 2, 1)
+
+        # Startup Settings section (beneath Terminal settings)
+        startup_header = Label(markup="<b>Startup Settings</b>", h_align="start")
+        system_grid.attach(startup_header, 0, 6, 2, 1)
+
+        startup_label = Label(
+            label="Enable Caffeine on Startup", h_align="start", v_align="center"
+        )
+        system_grid.attach(startup_label, 0, 7, 1, 1)
+        startup_switch_container = Gtk.Box(
+            orientation=Gtk.Orientation.HORIZONTAL,
+            halign=Gtk.Align.START,
+            valign=Gtk.Align.CENTER,
+        )
+        self.caffeine_switch = Gtk.Switch(
+            active=bind_vars.get("caffeine_on_start", False),
+            tooltip_text="Stops the system from sleeping when Caffeine is running",
+        )
+        startup_switch_container.add(self.caffeine_switch)
+        system_grid.attach(startup_switch_container, 1, 7, 1, 1)
 
         hypr_header = Label(markup="<b>Hyprland Integration</b>", h_align="start")
         system_grid.attach(hypr_header, 2, 3, 2, 1)
@@ -1142,6 +1163,7 @@ class HyprConfGUI(Window):
         current_bind_vars_snapshot['dock_always_occluded'] = self.dock_hover_switch.get_active()
         current_bind_vars_snapshot['dock_icon_size'] = int(self.dock_size_scale.value)
         current_bind_vars_snapshot['terminal_command'] = self.terminal_entry.get_text()
+        current_bind_vars_snapshot['caffeine_on_start'] = self.caffeine_switch.get_active()
         current_bind_vars_snapshot['corners_visible'] = self.corners_switch.get_active()
         current_bind_vars_snapshot['bar_workspace_show_number'] = self.ws_num_switch.get_active()
         current_bind_vars_snapshot['bar_workspace_use_chinese_numerals'] = self.ws_chinese_switch.get_active()
@@ -1444,6 +1466,9 @@ class HyprConfGUI(Window):
             self.terminal_entry.set_text(settings_utils.bind_vars["terminal_command"])
             self.auto_append_switch.set_active(
                 settings_utils.bind_vars.get("auto_append_hyprland", True)
+            )
+            self.caffeine_switch.set_active(
+                settings_utils.bind_vars.get('caffeine_on_start', False)
             )
             self.ws_num_switch.set_active(
                 settings_utils.bind_vars.get("bar_workspace_show_number", False)

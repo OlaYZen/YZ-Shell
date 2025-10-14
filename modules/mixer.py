@@ -39,10 +39,21 @@ class MixerSlider(Scale):
 
         self.stream = stream
         self._updating_from_stream = False
+        self._destroyed = False
+        self._stream_changed_handler_id = None
         self.set_value(stream.volume / 100)
 
         self.connect("value-changed", self.on_value_changed)
-        stream.connect("changed", self.on_stream_changed)
+        # Keep handler id so we can disconnect on destroy to avoid callbacks on disposed widgets
+        try:
+            self._stream_changed_handler_id = stream.connect("changed", self.on_stream_changed)
+        except Exception:
+            self._stream_changed_handler_id = None
+        # Ensure we cleanup when widget is destroyed
+        try:
+            self.connect("destroy", self._on_destroy)
+        except Exception:
+            pass
 
         # Apply appropriate style class based on stream type
         if hasattr(stream, "type"):
@@ -66,17 +77,33 @@ class MixerSlider(Scale):
             self.set_tooltip_text(f"{self.value * 100:.0f}%")
 
     def on_stream_changed(self, stream):
+        # Guard against callbacks firing after the widget has been destroyed
+        if self._destroyed:
+            return
         self._updating_from_stream = True
-        self.value = stream.volume / 100
-        self.set_tooltip_text(f"{stream.volume:.0f}%")
-        self.update_muted_state()
-        self._updating_from_stream = False
+        try:
+            self.value = stream.volume / 100
+            self.set_tooltip_text(f"{stream.volume:.0f}%")
+            self.update_muted_state()
+        except Exception:
+            # Swallow exceptions caused by GTK state during teardown
+            pass
+        finally:
+            self._updating_from_stream = False
 
     def update_muted_state(self):
         if self.stream.muted:
             self.add_style_class("muted")
         else:
             self.remove_style_class("muted")
+
+    def _on_destroy(self, *args):
+        self._destroyed = True
+        try:
+            if self.stream and self._stream_changed_handler_id is not None:
+                self.stream.disconnect(self._stream_changed_handler_id)
+        except Exception:
+            pass
 
 
 class MixerSection(Box):
@@ -86,7 +113,7 @@ class MixerSection(Box):
             orientation="v",
             spacing=8,
             h_expand=True,
-            v_expand=True,
+            v_expand=False,
         )
 
         self.title_label = Label(
@@ -101,7 +128,7 @@ class MixerSection(Box):
             orientation="v",
             spacing=8,
             h_expand=True,
-            v_expand=True,
+            v_expand=False,
         )
 
         self.add(self.title_label)
@@ -166,7 +193,7 @@ class Mixer(Box):
             orientation="h" if not vertical_mode else "v",
             spacing=8,
             h_expand=True,
-            v_expand=True,
+            v_expand=False,
         )
 
         self.main_container.set_homogeneous(True)
@@ -181,7 +208,20 @@ class Mixer(Box):
             h_expand=True,
             v_expand=True,
             child=self.main_container,
+            propagate_width=False,
+            propagate_height=False,
         )
+
+        # Ensure a visible vertical scrollbar and no horizontal scrollbar
+        try:
+            self.scrolled.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.ALWAYS)
+        except Exception:
+            pass
+        # Disable overlay scrolling so the scrollbar is always clearly visible
+        try:
+            self.scrolled.set_overlay_scrolling(False)
+        except Exception:
+            pass
 
         self.add(self.scrolled)
 

@@ -103,4 +103,6 @@ DEFAULTS = {
     "limited_apps_history": ["Spotify"],
     "history_ignored_apps": ["Hyprshot"],
     "selected_monitors": [],
+    # Startup behavior
+    'caffeine_on_start': False,
 }

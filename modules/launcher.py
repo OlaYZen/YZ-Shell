@@ -139,6 +139,32 @@ class AppLauncher(Box):
                 ]
             }
 
+    def fuzzy_match(self, query: str, target: str) -> bool:
+        """Return True if query fuzzily matches target (substring, subsequence, or similar)."""
+        q = (query or "").strip().casefold()
+        t = (target or "").strip().casefold()
+        if not q:
+            return True
+        if q in t:
+            return True
+        # Subsequence check: all query chars appear in order within target
+        idx = 0
+        for ch in q:
+            idx = t.find(ch, idx)
+            if idx == -1:
+                break
+            idx += 1
+        else:
+            return True
+        # Fallback: similarity ratio
+        try:
+            import difflib
+            if difflib.SequenceMatcher(None, q, t).ratio() >= 0.68:
+                return True
+        except Exception:
+            pass
+        return False
+
     def generate_progressive_terms(self, term):
         """Generate progressive character sequences for a search term"""
         # Generate progressive sequences: "internet" -> ["i", "in", "int", "inte", "inter", "intern", "interne", "internet"]
@@ -151,14 +177,27 @@ class AppLauncher(Box):
         """Check if an app should match the search query, including special cases from JSON config"""
         query_lower = query.casefold()
         
-        # Standard search fields
+        # Standard search fields (non-fuzzy): include more sources similar to previous inline filter
+        def extract_command_name(command_line):
+            if not command_line:
+                return ""
+            if command_line.startswith("/bin/sh -c"):
+                return ""
+            cmd = command_line.split()[0] if command_line.split() else ""
+            if "/" in cmd:
+                cmd = cmd.split("/")[-1]
+            return cmd
+
         searchable_text = (
             (app.display_name or "")
-            + (" " + app.name + " ")
+            + (" " + (app.name or "") + " ")
             + (app.generic_name or "")
+            + (" " + (getattr(app, "command_line", "") or "") + " ")
+            + (" " + (getattr(app, "executable", "") or "") + " ")
+            + (" " + extract_command_name(getattr(app, "command_line", "")) + " ")
         ).casefold()
-        
-        # Check normal search match
+
+        # Normal search: direct substring match only (no fuzzy) for general apps
         if query_lower in searchable_text:
             return True
         
@@ -170,7 +209,7 @@ class AppLauncher(Box):
             app_names = [name.casefold() for name in alias_config.get("app_names", [])]
             base_search_terms = [term.casefold() for term in alias_config.get("search_terms", [])]
             
-            # Generate progressive sequences for each base search term
+            # Generate progressive sequences for each base search term (optional boost for partials)
             all_search_terms = []
             for base_term in base_search_terms:
                 all_search_terms.extend(self.generate_progressive_terms(base_term))
@@ -181,8 +220,8 @@ class AppLauncher(Box):
                 for app_name in app_names
             )
             
-            # If app matches and query is in search terms, return True
-            if app_matches and query_lower in all_search_terms:
+            # If app matches and query fuzzily matches any alias term, return True
+            if app_matches and any(self.fuzzy_match(query_lower, term) for term in all_search_terms):
                 return True
         
         return False
@@ -251,15 +290,7 @@ class AppLauncher(Box):
                 [
                     app
                     for app in self._all_apps
-                    if query.casefold()
-                    in (
-                        (app.display_name or "")
-                        + (" " + app.name + " ")
-                        + (app.generic_name or "")
-                        + (" " + (app.command_line or "") + " ")
-                        + (" " + (app.executable or "") + " ")
-                        + (" " + extract_command_name(app.command_line) + " ")
-                    ).casefold()
+                    if self.should_app_match_query(app, query)
                 ],
                 key=lambda app: (app.display_name or "").casefold(),
             )
