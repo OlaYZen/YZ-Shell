@@ -105,4 +105,6 @@ DEFAULTS = {
     "selected_monitors": [],
     # Startup behavior
     'caffeine_on_start': False,
+    # Calendar
+    'calendar_start_monday': False,
 }

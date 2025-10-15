@@ -247,8 +247,8 @@ class HyprConfGUI(Window):
         )
         vbox.add(separator1)
 
-        # START NEW SECTION FOR DATETIME FORMAT
-        datetime_format_header = Label(markup="<b>Date & Time Format</b>", h_align="start")
+        # START NEW SECTION FOR CLOCK
+        datetime_format_header = Label(markup="<b>Clock</b>", h_align="start")
         vbox.add(datetime_format_header)
 
         datetime_grid = Gtk.Grid()
@@ -282,6 +282,33 @@ class HyprConfGUI(Window):
         self.datetime_show_seconds_switch = Gtk.Switch(active=bind_vars.get('datetime_show_seconds', True))
         datetime_show_seconds_switch_container.add(self.datetime_show_seconds_switch)
         datetime_grid.attach(datetime_show_seconds_switch_container, 3, 0, 1, 1)
+
+        # Calendar options
+        calendar_header = Label(markup="<b>Calendar</b>", h_align="start")
+        vbox.add(calendar_header)
+
+        calendar_grid = Gtk.Grid()
+        calendar_grid.set_column_spacing(20)
+        calendar_grid.set_row_spacing(10)
+        calendar_grid.set_margin_start(10)
+        calendar_grid.set_margin_top(5)
+        vbox.add(calendar_grid)
+
+        start_monday_label = Label(
+            label="Start week on Monday", h_align="start", v_align="center"
+        )
+        calendar_grid.attach(start_monday_label, 0, 0, 1, 1)
+
+        start_monday_switch_container = Gtk.Box(
+            orientation=Gtk.Orientation.HORIZONTAL,
+            halign=Gtk.Align.START,
+            valign=Gtk.Align.CENTER,
+        )
+        self.calendar_start_monday_switch = Gtk.Switch(
+            active=bind_vars.get("calendar_start_monday", False)
+        )
+        start_monday_switch_container.add(self.calendar_start_monday_switch)
+        calendar_grid.attach(start_monday_switch_container, 1, 0, 1, 1)
 
         # Media Player section
         media_header = Label(markup="<b>Media Player</b>", h_align="start")
@@ -1164,6 +1191,7 @@ class HyprConfGUI(Window):
         current_bind_vars_snapshot['dock_icon_size'] = int(self.dock_size_scale.value)
         current_bind_vars_snapshot['terminal_command'] = self.terminal_entry.get_text()
         current_bind_vars_snapshot['caffeine_on_start'] = self.caffeine_switch.get_active()
+        current_bind_vars_snapshot['calendar_start_monday'] = self.calendar_start_monday_switch.get_active()
         current_bind_vars_snapshot['corners_visible'] = self.corners_switch.get_active()
         current_bind_vars_snapshot['bar_workspace_show_number'] = self.ws_num_switch.get_active()
         current_bind_vars_snapshot['bar_workspace_use_chinese_numerals'] = self.ws_chinese_switch.get_active()
@@ -1464,6 +1492,9 @@ class HyprConfGUI(Window):
                 settings_utils.bind_vars.get("dock_icon_size", 28)
             )
             self.terminal_entry.set_text(settings_utils.bind_vars["terminal_command"])
+            self.calendar_start_monday_switch.set_active(
+                settings_utils.bind_vars.get('calendar_start_monday', False)
+            )
             self.auto_append_switch.set_active(
                 settings_utils.bind_vars.get("auto_append_hyprland", True)
             )

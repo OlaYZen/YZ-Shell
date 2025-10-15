@@ -18,8 +18,20 @@ class Calendar(Gtk.Box):
         super().__init__(orientation=Gtk.Orientation.VERTICAL, spacing=8, name="calendar")
         self.widgets = widgets
 
-        # Set Monday as the first day of the week (0=Monday, 6=Sunday)
+        # Default first day of week (0=Monday, 6=Sunday), may be overridden by settings
         self.first_weekday = 0
+
+        # Read user setting to optionally force Monday as first weekday
+        try:
+            from config.data import load_config
+            cfg = load_config()
+            if cfg.get('calendar_start_monday', False):
+                self.first_weekday = 0
+                self._force_monday = True
+            else:
+                self._force_monday = False
+        except Exception:
+            self._force_monday = False
 
         self.set_halign(Gtk.Align.CENTER)
         self.set_hexpand(False)
@@ -73,8 +85,9 @@ class Calendar(Gtk.Box):
         self.setup_periodic_update()
         self.setup_dbus_listeners()
 
-        # Initialize locale settings asynchronously
-        GLib.Thread.new("calendar-locale", self._init_locale_settings_thread, None)
+        # Initialize locale settings asynchronously unless forcing Monday
+        if not getattr(self, '_force_monday', False):
+            GLib.Thread.new("calendar-locale", self._init_locale_settings_thread, None)
 
     def _init_locale_settings_thread(self, user_data):
         """Background thread to initialize locale settings without blocking UI."""
