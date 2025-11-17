@@ -78,7 +78,9 @@ class Dock(Window):
         self.icon_size = 20 if self.integrated_mode else data.DOCK_ICON_SIZE
         self.effective_occlusion_size = 36 + self.icon_size
         self.always_show = data.DOCK_ALWAYS_SHOW if not self.integrated_mode else False
-        self.always_occluded = data.DOCK_ALWAYS_OCCLUDED if not self.integrated_mode else False
+        # DOCK_ALWAYS_OCCLUDED was removed in favor of DOCK_ALWAYS_SHOW
+        # Setting to False to maintain backward compatibility
+        self.always_occluded = False
 
         anchor_to_set: str
         revealer_transition_type: str

@@ -285,12 +285,25 @@ class AppLauncher(Box):
                 cmd = cmd.split("/")[-1]
             return cmd
 
+        # Custom filter: when searching for "steam", exclude apps with "Play this" and "steam" in description
+        query_lower = query.casefold()
+        is_steam_search = "steam" in query_lower
+        
+        def should_exclude_app(app):
+            """Check if app should be excluded when searching for steam"""
+            if not is_steam_search or not app.description:
+                return False
+            desc_lower = app.description.casefold()
+            # Exclude if description contains both "play this" and "steam"
+            return "play this" in desc_lower and "steam" in desc_lower
+        
         filtered_apps_iter = iter(
             sorted(
                 [
                     app
                     for app in self._all_apps
                     if self.should_app_match_query(app, query)
+                    and not should_exclude_app(app)
                 ],
                 key=lambda app: (app.display_name or "").casefold(),
             )
