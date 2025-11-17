@@ -10,7 +10,6 @@ from gi.repository import Gdk, GLib  # type: ignore
 APP_NAME = "yz-shell"
 APP_NAME_CAP = "YZ-Shell"
 
-
 PANEL_POSITION_KEY = "panel_position"
 PANEL_POSITION_DEFAULT = "Center"
 NOTIF_POS_KEY = "notif_pos"
@@ -28,20 +27,9 @@ screen = Gdk.Screen.get_default()
 CURRENT_WIDTH = screen.get_width()
 CURRENT_HEIGHT = screen.get_height()
 
-
-WALLPAPERS_DIR_DEFAULT = get_relative_path("../assets/wallpapers_example")
 CONFIG_FILE = get_relative_path("../config/config.json")
 MATUGEN_STATE_FILE = os.path.join(CONFIG_DIR, "matugen")
 
-
-BAR_WORKSPACE_USE_CHINESE_NUMERALS = False
-BAR_THEME = "Pills"
-
-DOCK_THEME = "Pills"
-
-PANEL_THEME = "Notch"
-DATETIME_12H_FORMAT = False # Default value if config file doesn't exist
-DATETIME_SHOW_SECONDS = True # Default value if config file doesn't exist
 
 def load_config():
     """Load the configuration from config.json"""
@@ -66,84 +54,54 @@ config = {}
 if os.path.exists(CONFIG_FILE):
     with open(CONFIG_FILE, 'r') as f:
         config = json.load(f)
-    WALLPAPERS_DIR = config.get('wallpapers_dir', WALLPAPERS_DIR_DEFAULT)
-    BAR_POSITION = config.get('bar_position', "Top")
-    VERTICAL = BAR_POSITION in ["Left", "Right"]
-    CENTERED_BAR = config.get('centered_bar', False)
-    DATETIME_12H_FORMAT = config.get('datetime_12h_format', False)
-    TERMINAL_COMMAND = config.get('terminal_command', "kitty -e")
-    DOCK_ENABLED = config.get('dock_enabled', True)
-    DOCK_ALWAYS_OCCLUDED = config.get('dock_always_occluded', False)
-    DOCK_ALWAYS_SHOW = config.get('dock_always_show', False)
-    DOCK_ICON_SIZE = config.get('dock_icon_size', 28)
-    BAR_WORKSPACE_SHOW_NUMBER = config.get('bar_workspace_show_number', False)
-    BAR_WORKSPACE_USE_CHINESE_NUMERALS = config.get('bar_workspace_use_chinese_numerals', False)
-    BAR_HIDE_SPECIAL_WORKSPACE = config.get('bar_hide_special_workspace', True)
-    BAR_THEME = config.get('bar_theme', "Pills")
-    DOCK_THEME = config.get('dock_theme', "Pills")
-    PANEL_THEME = config.get('panel_theme', "Pills")
 
-    PANEL_POSITION = config.get(PANEL_POSITION_KEY, PANEL_POSITION_DEFAULT)
-    NOTIF_POS = config.get(NOTIF_POS_KEY, NOTIF_POS_DEFAULT)
+def get_default(setting_str: str):
+    return DEFAULTS[setting_str] if setting_str in DEFAULTS else ""
 
 
-    BAR_COMPONENTS_VISIBILITY = {
-        'button_apps': config.get('bar_button_apps_visible', True),
-        'systray': config.get('bar_systray_visible', True),
-        'control': config.get('bar_control_visible', True),
-        'network': config.get('bar_network_visible', True),
-        'button_tools': config.get('bar_button_tools_visible', True),
-        'button_overview': config.get('bar_button_overview_visible', True),
-        'ws_container': config.get('bar_ws_container_visible', True),
-        'weather': config.get('bar_weather_visible', True),
-        'battery': config.get('bar_battery_visible', True),
-        'metrics': config.get('bar_metrics_visible', True),
-        'language': config.get('bar_language_visible', True),
-        'date_time': config.get('bar_date_time_visible', True),
-        'button_power': config.get('bar_button_power_visible', True),
-    }
-    
-    BAR_METRICS_DISKS = config.get('bar_metrics_disks', ["/"])
-    METRICS_VISIBLE = config.get('metrics_visible', {'cpu': True, 'ram': True, 'disk': True, 'gpu': True})
-    METRICS_SMALL_VISIBLE = config.get('metrics_small_visible', {'cpu': True, 'ram': True, 'disk': True, 'gpu': True})
-else:
-    WALLPAPERS_DIR = WALLPAPERS_DIR_DEFAULT
-    BAR_POSITION = "Top"
-    VERTICAL = False
-    CENTERED_BAR = False
-    DATETIME_12H_FORMAT = False
-    DOCK_ENABLED = True
-    DOCK_ALWAYS_OCCLUDED = False
-    DOCK_ALWAYS_SHOW = False
-    TERMINAL_COMMAND = "kitty -e"
-    DOCK_ICON_SIZE = 28
-    BAR_WORKSPACE_SHOW_NUMBER = False
-    BAR_WORKSPACE_USE_CHINESE_NUMERALS = False
-    BAR_HIDE_SPECIAL_WORKSPACE = True
-    BAR_THEME = "Pills"
-    DOCK_THEME = "Pills"
-    PANEL_THEME = "Notch"
-
-    PANEL_POSITION = PANEL_POSITION_DEFAULT
-    NOTIF_POS = NOTIF_POS_DEFAULT
+def _get_config_var(setting_str: str):
+    return config.get(setting_str, get_default(setting_str))
 
 
-    BAR_COMPONENTS_VISIBILITY = {
-        'button_apps': True,
-        'systray': True,
-        'control': True,
-        'network': True,
-        'button_tools': True,
-        'button_overview': True,
-        'ws_container': True,
-        'weather': True,
-        'battery': True,
-        'metrics': True,
-        'language': True,
-        'date_time': True,
-        'button_power': True,
-    }
-    
-    BAR_METRICS_DISKS = ["/"]
-    METRICS_VISIBLE = {'cpu': True, 'ram': True, 'disk': True, 'gpu': True}
-    METRICS_SMALL_VISIBLE = {'cpu': True, 'ram': True, 'disk': True, 'gpu': True}
+# Set configuration values using defaults from settings_constants
+WALLPAPERS_DIR = _get_config_var("wallpapers_dir")
+BAR_POSITION = _get_config_var("bar_position")
+VERTICAL = BAR_POSITION in ["Left", "Right"]
+CENTERED_BAR = _get_config_var("centered_bar")
+DATETIME_12H_FORMAT = _get_config_var("datetime_12h_format")
+TERMINAL_COMMAND = _get_config_var("terminal_command")
+DOCK_ENABLED = _get_config_var("dock_enabled")
+DOCK_ALWAYS_SHOW = _get_config_var("dock_always_show")
+DOCK_ICON_SIZE = _get_config_var("dock_icon_size")
+BAR_WORKSPACE_SHOW_NUMBER = _get_config_var("bar_workspace_show_number")
+BAR_WORKSPACE_USE_CHINESE_NUMERALS = _get_config_var(
+    "bar_workspace_use_chinese_numerals"
+)
+BAR_HIDE_SPECIAL_WORKSPACE = _get_config_var("bar_hide_special_workspace")
+BAR_THEME = _get_config_var("bar_theme")
+DOCK_THEME = _get_config_var("dock_theme")
+PANEL_THEME = _get_config_var("panel_theme")
+PANEL_POSITION = _get_config_var("panel_position")
+NOTIF_POS = _get_config_var("notif_pos")
+
+BAR_COMPONENTS_VISIBILITY = {
+    "button_apps": _get_config_var("bar_button_apps_visible"),
+    "systray": _get_config_var("bar_systray_visible"),
+    "control": _get_config_var("bar_control_visible"),
+    "network": _get_config_var("bar_network_visible"),
+    "button_tools": _get_config_var("bar_button_tools_visible"),
+    "sysprofiles": _get_config_var("bar_sysprofiles_visible"),
+    "button_overview": _get_config_var("bar_button_overview_visible"),
+    "ws_container": _get_config_var("bar_ws_container_visible"),
+    "weather": _get_config_var("bar_weather_visible"),
+    "battery": _get_config_var("bar_battery_visible"),
+    "metrics": _get_config_var("bar_metrics_visible"),
+    "language": _get_config_var("bar_language_visible"),
+    "date_time": _get_config_var("bar_date_time_visible"),
+    "button_power": _get_config_var("bar_button_power_visible"),
+}
+
+BAR_METRICS_DISKS = _get_config_var("bar_metrics_disks")
+METRICS_VISIBLE = _get_config_var("metrics_visible")
+METRICS_SMALL_VISIBLE = _get_config_var("metrics_small_visible")
+SELECTED_MONITORS = _get_config_var("selected_monitors")

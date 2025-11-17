@@ -42,6 +42,7 @@ class MixerSlider(Scale):
         self._destroyed = False
         self._stream_changed_handler_id = None
         self.set_value(stream.volume / 100)
+        self.set_size_request(-1, 30)  # Fixed height for sliders
 
         self.connect("value-changed", self.on_value_changed)
         # Keep handler id so we can disconnect on destroy to avoid callbacks on disposed widgets
@@ -113,7 +114,7 @@ class MixerSection(Box):
             orientation="v",
             spacing=8,
             h_expand=True,
-            v_expand=False,
+            v_expand=False,  # Prevent vertical stretching
         )
 
         self.title_label = Label(
@@ -128,7 +129,7 @@ class MixerSection(Box):
             orientation="v",
             spacing=8,
             h_expand=True,
-            v_expand=False,
+            v_expand=False,  # Prevent vertical stretching
         )
 
         self.add(self.title_label)
@@ -139,12 +140,15 @@ class MixerSection(Box):
             self.content_box.remove(child)
 
         for stream in streams:
-            # Create container with label and slider
+            label_text = stream.description
+            if hasattr(stream, "type") and "application" in stream.type.lower():
+                label_text = getattr(stream, "name", stream.description)
+
             stream_container = Box(
                 orientation="v",
                 spacing=4,
                 h_expand=True,
-                v_align="center",
+                v_expand=False,  # Prevent vertical stretching
             )
 
             label = Label(
@@ -155,6 +159,7 @@ class MixerSection(Box):
                 v_align="center",
                 ellipsization="end",
                 max_chars_width=45,
+                height_request=20,  # Fixed height for labels
             )
 
             slider = MixerSlider(stream)
@@ -173,7 +178,7 @@ class Mixer(Box):
             orientation="v",
             spacing=8,
             h_expand=True,
-            v_expand=True,
+            v_expand=True,  # Allow Mixer to expand to parent height
         )
 
         try:
@@ -193,43 +198,48 @@ class Mixer(Box):
             orientation="h" if not vertical_mode else "v",
             spacing=8,
             h_expand=True,
-            v_expand=False,
+            v_expand=True,  # Allow main_container to expand
         )
+        self.main_container.set_homogeneous(True)  # Equal sizing for outputs and inputs
 
-        self.main_container.set_homogeneous(True)
-
-        self.outputs_section = MixerSection("Outputs")
-        self.inputs_section = MixerSection("Inputs")
-
-        self.main_container.add(self.outputs_section)
-        self.main_container.add(self.inputs_section)
-
-        self.scrolled = ScrolledWindow(
+        # ScrolledWindow for Outputs
+        self.outputs_scrolled = ScrolledWindow(
+            name="outputs-scrolled",
             h_expand=True,
-            v_expand=True,
-            child=self.main_container,
-            propagate_width=False,
-            propagate_height=False,
+            v_expand=False,  # Prevent vertical expansion
+            vscrollbar_policy=Gtk.PolicyType.AUTOMATIC,  # Vertical scrollbar when needed
+            hscrollbar_policy=Gtk.PolicyType.NEVER,      # Disable horizontal scrollbar
         )
+        self.outputs_section = MixerSection("Outputs")
+        self.outputs_scrolled.add(self.outputs_section)
+        self.outputs_scrolled.set_size_request(-1, 150)  # Fixed height of 150px
+        self.outputs_scrolled.set_max_content_height(150)  # Enforce max height
 
-        # Ensure a visible vertical scrollbar and no horizontal scrollbar
-        try:
-            self.scrolled.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.ALWAYS)
-        except Exception:
-            pass
-        # Disable overlay scrolling so the scrollbar is always clearly visible
-        try:
-            self.scrolled.set_overlay_scrolling(False)
-        except Exception:
-            pass
+        # ScrolledWindow for Inputs
+        self.inputs_scrolled = ScrolledWindow(
+            name="inputs-scrolled",
+            h_expand=True,
+            v_expand=False,  # Prevent vertical expansion
+            vscrollbar_policy=Gtk.PolicyType.AUTOMATIC,  # Vertical scrollbar when needed
+            hscrollbar_policy=Gtk.PolicyType.NEVER,      # Disable horizontal scrollbar
+        )
+        self.inputs_section = MixerSection("Inputs")
+        self.inputs_scrolled.add(self.inputs_section)
+        self.inputs_scrolled.set_size_request(-1, 150)  # Fixed height of 150px
+        self.inputs_scrolled.set_max_content_height(150)  # Enforce max height
 
-        self.add(self.scrolled)
+        self.main_container.add(self.outputs_scrolled)
+        self.main_container.add(self.inputs_scrolled)
+
+        self.add(self.main_container)
+        self.set_size_request(-1, 300)  # Optional: Set total height to 300px (150px per section)
 
         self.audio.connect("changed", self.on_audio_changed)
         self.audio.connect("stream-added", self.on_audio_changed)
         self.audio.connect("stream-removed", self.on_audio_changed)
 
         self.update_mixer()
+        self.show_all()
 
     def on_audio_changed(self, *args):
         self.update_mixer()

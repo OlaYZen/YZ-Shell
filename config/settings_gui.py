@@ -23,12 +23,14 @@ from PIL import Image
 from .data import (
     APP_NAME,
     APP_NAME_CAP,
-    NOTIF_POS_DEFAULT,
-    NOTIF_POS_KEY,
-    PANEL_POSITION_DEFAULT,
-    PANEL_POSITION_KEY,
 )
-from .settings_utils import backup_and_replace, bind_vars, start_config
+from .settings_utils import (
+    backup_and_replace,
+    bind_vars,
+    get_bind_var,
+    get_default,
+    start_config,
+)
 
 
 class HyprConfGUI(Window):
@@ -160,11 +162,11 @@ class HyprConfGUI(Window):
             row = i + 1
             binding_label = Label(label=label_text, h_align="start")
             keybind_grid.attach(binding_label, 0, row, 1, 1)
-            prefix_entry = Entry(text=bind_vars.get(prefix_key, ""))
+            prefix_entry = Entry(text=get_bind_var(prefix_key))
             keybind_grid.attach(prefix_entry, 1, row, 1, 1)
             plus_label = Label(label="+", h_align="center")
             keybind_grid.attach(plus_label, 2, row, 1, 1)
-            suffix_entry = Entry(text=bind_vars.get(suffix_key, ""))
+            suffix_entry = Entry(text=get_bind_var(suffix_key))
             keybind_grid.attach(suffix_entry, 3, row, 1, 1)
             self.entries.append((prefix_key, suffix_key, prefix_entry, suffix_entry))
 
@@ -204,7 +206,7 @@ class HyprConfGUI(Window):
         self.wall_dir_chooser.set_tooltip_text(
             "Select the directory containing your wallpaper images"
         )
-        self.wall_dir_chooser.set_filename(bind_vars.get("wallpapers_dir", ""))
+        self.wall_dir_chooser.set_filename(get_bind_var("wallpapers_dir"))
         self.wall_dir_chooser.set_size_request(180, -1)
         chooser_container.add(self.wall_dir_chooser)
         top_grid.attach(chooser_container, 1, 1, 1, 1)
@@ -270,7 +272,7 @@ class HyprConfGUI(Window):
             valign=Gtk.Align.CENTER,
         )
         self.datetime_12h_switch = Gtk.Switch(
-            active=bind_vars.get("datetime_12h_format", False)
+            active=get_bind_var("datetime_12h_format")
         )
         datetime_12h_switch_container.add(self.datetime_12h_switch)
         datetime_grid.attach(datetime_12h_switch_container, 1, 0, 1, 1)
@@ -352,7 +354,7 @@ class HyprConfGUI(Window):
         positions = ["Top", "Bottom", "Left", "Right"]
         for pos in positions:
             self.position_combo.append_text(pos)
-        current_position = bind_vars.get("bar_position", "Top")
+        current_position = get_bind_var("bar_position")
         try:
             self.position_combo.set_active(positions.index(current_position))
         except ValueError:
@@ -371,8 +373,8 @@ class HyprConfGUI(Window):
             valign=Gtk.Align.CENTER,
         )
         self.centered_switch = Gtk.Switch(
-            active=bind_vars.get("centered_bar", False),
-            sensitive=bind_vars.get("bar_position", "Top") in ["Left", "Right"],
+            active=get_bind_var("centered_bar"),
+            sensitive=get_bind_var("bar_position") in ["Left", "Right"],
         )
         centered_switch_container.add(self.centered_switch)
         layout_grid.attach(centered_switch_container, 3, 0, 1, 1)
@@ -384,7 +386,7 @@ class HyprConfGUI(Window):
             halign=Gtk.Align.START,
             valign=Gtk.Align.CENTER,
         )
-        self.dock_switch = Gtk.Switch(active=bind_vars.get("dock_enabled", True))
+        self.dock_switch = Gtk.Switch(active=get_bind_var("dock_enabled"))
         self.dock_switch.connect("notify::active", self.on_dock_enabled_changed)
         dock_switch_container.add(self.dock_switch)
         layout_grid.attach(dock_switch_container, 1, 1, 1, 1)
@@ -399,7 +401,7 @@ class HyprConfGUI(Window):
             valign=Gtk.Align.CENTER,
         )
         self.dock_hover_switch = Gtk.Switch(
-            active=bind_vars.get("dock_always_show", False),
+            active=get_bind_var("dock_always_show"),
             sensitive=self.dock_switch.get_active(),
         )
         dock_hover_switch_container.add(self.dock_hover_switch)
@@ -412,7 +414,7 @@ class HyprConfGUI(Window):
         self.dock_size_scale = Scale(
             min_value=16,
             max_value=48,
-            value=bind_vars.get("dock_icon_size", 28),
+            value=get_bind_var("dock_icon_size"),
             increments=(2, 4),
             draw_value=True,
             value_position="right",
@@ -431,7 +433,7 @@ class HyprConfGUI(Window):
             valign=Gtk.Align.CENTER,
         )
         self.ws_num_switch = Gtk.Switch(
-            active=bind_vars.get("bar_workspace_show_number", False)
+            active=get_bind_var("bar_workspace_show_number")
         )
         self.ws_num_switch.connect("notify::active", self.on_ws_num_changed)
         ws_num_switch_container.add(self.ws_num_switch)
@@ -447,7 +449,7 @@ class HyprConfGUI(Window):
             valign=Gtk.Align.CENTER,
         )
         self.ws_chinese_switch = Gtk.Switch(
-            active=bind_vars.get("bar_workspace_use_chinese_numerals", False),
+            active=get_bind_var("bar_workspace_use_chinese_numerals"),
             sensitive=self.ws_num_switch.get_active(),
         )
         ws_chinese_switch_container.add(self.ws_chinese_switch)
@@ -463,7 +465,7 @@ class HyprConfGUI(Window):
             valign=Gtk.Align.CENTER,
         )
         self.special_ws_switch = Gtk.Switch(
-            active=bind_vars.get("bar_hide_special_workspace", True)
+            active=get_bind_var("bar_hide_special_workspace")
         )
         special_ws_switch_container.add(self.special_ws_switch)
         layout_grid.attach(special_ws_switch_container, 1, 4, 1, 1)
@@ -480,7 +482,7 @@ class HyprConfGUI(Window):
         themes = ["Pills", "Dense", "Edge"]
         for theme in themes:
             self.bar_theme_combo.append_text(theme)
-        current_theme = bind_vars.get("bar_theme", "Pills")
+        current_theme = get_bind_var("bar_theme")
         try:
             self.bar_theme_combo.set_active(themes.index(current_theme))
         except ValueError:
@@ -499,7 +501,7 @@ class HyprConfGUI(Window):
         self.dock_theme_combo.set_tooltip_text("Select the visual theme for the dock")
         for theme in themes:
             self.dock_theme_combo.append_text(theme)
-        current_dock_theme = bind_vars.get("dock_theme", "Pills")
+        current_dock_theme = get_bind_var("dock_theme")
         try:
             self.dock_theme_combo.set_active(themes.index(current_dock_theme))
         except ValueError:
@@ -523,7 +525,7 @@ class HyprConfGUI(Window):
         panel_themes = ["Notch", "Panel"]
         for theme in panel_themes:
             self.panel_theme_combo.append_text(theme)
-        current_panel_theme = bind_vars.get("panel_theme", "Notch")
+        current_panel_theme = get_bind_var("panel_theme")
         try:
             self.panel_theme_combo.set_active(panel_themes.index(current_panel_theme))
         except ValueError:
@@ -553,9 +555,7 @@ class HyprConfGUI(Window):
         for option in self.panel_position_options:
             self.panel_position_combo.append_text(option)
 
-        current_panel_position = bind_vars.get(
-            PANEL_POSITION_KEY, PANEL_POSITION_DEFAULT
-        )
+        current_panel_position = get_bind_var("panel_position")
         try:
             self.panel_position_combo.set_active(
                 self.panel_position_options.index(current_panel_position)
@@ -563,7 +563,7 @@ class HyprConfGUI(Window):
         except ValueError:
             try:
                 self.panel_position_combo.set_active(
-                    self.panel_position_options.index(PANEL_POSITION_DEFAULT)
+                    self.panel_position_options.index("Center")
                 )
             except ValueError:
                 self.panel_position_combo.set_active(0)
@@ -591,7 +591,7 @@ class HyprConfGUI(Window):
         for pos in notification_positions_list:
             self.notification_pos_combo.append_text(pos)
 
-        current_notif_pos = bind_vars.get(NOTIF_POS_KEY, NOTIF_POS_DEFAULT)
+        current_notif_pos = get_bind_var("notif_pos")
         try:
             self.notification_pos_combo.set_active(
                 notification_positions_list.index(current_notif_pos)
@@ -631,7 +631,7 @@ class HyprConfGUI(Window):
             'button_power': "Power Button",
         }
 
-        self.corners_switch = Gtk.Switch(active=bind_vars.get("corners_visible", True))
+        self.corners_switch = Gtk.Switch(active=get_bind_var("corners_visible"))
         num_components = len(component_display_names) + 1
         rows_per_column = (num_components + 1) // 2
 
@@ -666,9 +666,7 @@ class HyprConfGUI(Window):
                 halign=Gtk.Align.START,
                 valign=Gtk.Align.CENTER,
             )
-            component_switch = Gtk.Switch(
-                active=bind_vars.get(f"bar_{name}_visible", True)
-            )
+            component_switch = Gtk.Switch(active=get_bind_var(f"bar_{name}_visible"))
             switch_container.add(component_switch)
             components_grid.attach(switch_container, col + 1, row, 1, 1)
             self.component_switches[name] = component_switch
@@ -689,9 +687,9 @@ class HyprConfGUI(Window):
     def on_notification_position_changed(self, combo: Gtk.ComboBoxText):
         selected_text = combo.get_active_text()
         if selected_text:
-            bind_vars[NOTIF_POS_KEY] = selected_text
+            bind_vars["notif_pos"] = selected_text
             print(
-                f"Notification position updated in bind_vars: {bind_vars[NOTIF_POS_KEY]}"
+                f"Notification position updated in bind_vars: {bind_vars["notif_pos"]}"
             )
 
     def create_system_tab(self):
@@ -724,8 +722,8 @@ class HyprConfGUI(Window):
             valign=Gtk.Align.CENTER,
         )
         self.auto_append_switch = Gtk.Switch(
-            active=bind_vars.get("auto_append_hyprland", True),
-            tooltip_text="Automatically append YZ-Shell source string to hyprland.conf"
+            active=get_bind_var("auto_append_hyprland"),
+            tooltip_text="Automatically append YZ-Shell source string to hyprland.conf",
         )
         auto_append_switch_container.add(self.auto_append_switch)
         system_grid.attach(auto_append_switch_container, 1, 0, 1, 1)
@@ -733,50 +731,55 @@ class HyprConfGUI(Window):
         # Monitor Selection - second option
         monitor_header = Label(markup="<b>Monitor Selection</b>", h_align="start")
         system_grid.attach(monitor_header, 0, 1, 2, 1)
-        
+
         monitor_label = Label(
             label="Show YZ-Shell on monitors:", h_align="start", v_align="center"
         )
         system_grid.attach(monitor_label, 0, 2, 1, 1)
-        
+
         # Create monitor selection container
-        self.monitor_selection_container = Box(orientation="v", spacing=5, h_align="start")
+        self.monitor_selection_container = Box(
+            orientation="v", spacing=5, h_align="start"
+        )
         self.monitor_checkboxes = {}
-        
+
         # Get available monitors
         try:
             from utils.monitor_manager import get_monitor_manager
+
             monitor_manager = get_monitor_manager()
             available_monitors = monitor_manager.get_monitors()
         except (ImportError, Exception) as e:
             print(f"Could not get monitor info for settings: {e}")
-            available_monitors = [{'id': 0, 'name': 'default'}]
-        
+            available_monitors = [{"id": 0, "name": "default"}]
+
         # Get current selection from config
-        current_selection = bind_vars.get("selected_monitors", [])
-        
+        current_selection = get_bind_var("selected_monitors")
+
         # Create checkboxes for each monitor
         for monitor in available_monitors:
-            monitor_name = monitor.get('name', f'monitor-{monitor.get("id", 0)}')
-            
+            monitor_name = monitor.get("name", f'monitor-{monitor.get("id", 0)}')
+
             checkbox_container = Box(orientation="h", spacing=5, h_align="start")
             checkbox = Gtk.CheckButton(label=monitor_name)
-            
+
             # Check if this monitor is selected (empty selection means all selected)
-            is_selected = len(current_selection) == 0 or monitor_name in current_selection
+            is_selected = (
+                len(current_selection) == 0 or monitor_name in current_selection
+            )
             checkbox.set_active(is_selected)
-            
+
             checkbox_container.add(checkbox)
             self.monitor_selection_container.add(checkbox_container)
             self.monitor_checkboxes[monitor_name] = checkbox
-        
+
         # Add hint label
         hint_label = Label(
             markup="<small>Leave all unchecked to show on all monitors</small>",
             h_align="start",
         )
         self.monitor_selection_container.add(hint_label)
-        
+
         system_grid.attach(self.monitor_selection_container, 1, 2, 1, 1)
 
         terminal_header = Label(markup="<b>Terminal Settings</b>", h_align="start")
@@ -784,7 +787,7 @@ class HyprConfGUI(Window):
         terminal_label = Label(label="Command:", h_align="start", v_align="center")
         system_grid.attach(terminal_label, 0, 4, 1, 1)
         self.terminal_entry = Entry(
-            text=bind_vars.get("terminal_command", "kitty -e"),
+            text=get_bind_var("terminal_command"),
             tooltip_text="Command used to launch terminal apps (e.g., 'kitty -e')",
             h_expand=True,
         )
@@ -867,7 +870,7 @@ class HyprConfGUI(Window):
         )
         notif_grid.attach(limited_apps_label, 0, 0, 1, 1)
 
-        limited_apps_list = bind_vars.get("limited_apps_history", ["Spotify"])
+        limited_apps_list = get_bind_var("limited_apps_history")
         limited_apps_text = ", ".join(f'"{app}"' for app in limited_apps_list)
         self.limited_apps_entry = Entry(
             text=limited_apps_text,
@@ -888,7 +891,7 @@ class HyprConfGUI(Window):
         )
         notif_grid.attach(ignored_apps_label, 0, 2, 1, 1)
 
-        ignored_apps_list = bind_vars.get("history_ignored_apps", ["Hyprshot"])
+        ignored_apps_list = get_bind_var("history_ignored_apps")
         ignored_apps_text = ", ".join(f'"{app}"' for app in ignored_apps_list)
         self.ignored_apps_entry = Entry(
             text=ignored_apps_text,
@@ -916,9 +919,7 @@ class HyprConfGUI(Window):
 
         metrics_grid.attach(Label(label="Show in Metrics", h_align="start"), 0, 0, 1, 1)
         for i, (key, label_text) in enumerate(metric_names.items()):
-            switch = Gtk.Switch(
-                active=bind_vars.get("metrics_visible", {}).get(key, True)
-            )
+            switch = Gtk.Switch(active=get_bind_var("metrics_visible").get(key, True))
             self.metrics_switches[key] = switch
             metrics_grid.attach(
                 Label(label=label_text, h_align="start"), 0, i + 1, 1, 1
@@ -930,7 +931,7 @@ class HyprConfGUI(Window):
         )
         for i, (key, label_text) in enumerate(metric_names.items()):
             switch = Gtk.Switch(
-                active=bind_vars.get("metrics_small_visible", {}).get(key, True)
+                active=get_bind_var("metrics_small_visible").get(key, True)
             )
             self.metrics_small_switches[key] = switch
             metrics_grid.attach(
@@ -964,7 +965,7 @@ class HyprConfGUI(Window):
             path
         )
 
-        for p in bind_vars.get("bar_metrics_disks", ["/"]):
+        for p in get_bind_var("bar_metrics_disks"):
             self._create_disk_edit_entry_func(p)
         vbox.add(self.disk_entries)
 
@@ -1179,31 +1180,59 @@ class HyprConfGUI(Window):
             current_bind_vars_snapshot[prefix_key] = prefix_entry.get_text()
             current_bind_vars_snapshot[suffix_key] = suffix_entry.get_text()
 
-        current_bind_vars_snapshot['wallpapers_dir'] = self.wall_dir_chooser.get_filename()
-        
-        current_bind_vars_snapshot['bar_position'] = self.position_combo.get_active_text()
-        current_bind_vars_snapshot['vertical'] = current_bind_vars_snapshot['bar_position'] in ["Left", "Right"]
-        
-        current_bind_vars_snapshot['centered_bar'] = self.centered_switch.get_active()
-        current_bind_vars_snapshot['datetime_12h_format'] = self.datetime_12h_switch.get_active()
-        current_bind_vars_snapshot['dock_enabled'] = self.dock_switch.get_active()
-        current_bind_vars_snapshot['dock_always_occluded'] = self.dock_hover_switch.get_active()
-        current_bind_vars_snapshot['dock_icon_size'] = int(self.dock_size_scale.value)
-        current_bind_vars_snapshot['terminal_command'] = self.terminal_entry.get_text()
-        current_bind_vars_snapshot['caffeine_on_start'] = self.caffeine_switch.get_active()
-        current_bind_vars_snapshot['calendar_start_monday'] = self.calendar_start_monday_switch.get_active()
-        current_bind_vars_snapshot['corners_visible'] = self.corners_switch.get_active()
-        current_bind_vars_snapshot['bar_workspace_show_number'] = self.ws_num_switch.get_active()
-        current_bind_vars_snapshot['bar_workspace_use_chinese_numerals'] = self.ws_chinese_switch.get_active()
-        current_bind_vars_snapshot['bar_theme'] = self.bar_theme_combo.get_active_text()
-        current_bind_vars_snapshot['dock_theme'] = self.dock_theme_combo.get_active_text()
-        current_bind_vars_snapshot['panel_theme'] = self.panel_theme_combo.get_active_text()
-        current_bind_vars_snapshot[PANEL_POSITION_KEY] = self.panel_position_combo.get_active_text()
+        current_bind_vars_snapshot["wallpapers_dir"] = (
+            self.wall_dir_chooser.get_filename()
+        )
+
+        current_bind_vars_snapshot["bar_position"] = (
+            self.position_combo.get_active_text()
+        )
+        current_bind_vars_snapshot["vertical"] = current_bind_vars_snapshot[
+            "bar_position"
+        ] in ["Left", "Right"]
+
+        current_bind_vars_snapshot["centered_bar"] = self.centered_switch.get_active()
+        current_bind_vars_snapshot["datetime_12h_format"] = (
+            self.datetime_12h_switch.get_active()
+        )
+        current_bind_vars_snapshot["dock_enabled"] = self.dock_switch.get_active()
+        current_bind_vars_snapshot["dock_always_show"] = (
+            self.dock_hover_switch.get_active()
+        )
+        current_bind_vars_snapshot["dock_icon_size"] = int(self.dock_size_scale.value)
+        current_bind_vars_snapshot["terminal_command"] = self.terminal_entry.get_text()
+        current_bind_vars_snapshot["auto_append_hyprland"] = (
+            self.auto_append_switch.get_active()
+        )
+        current_bind_vars_snapshot["caffeine_on_start"] = self.caffeine_switch.get_active()
+        current_bind_vars_snapshot["calendar_start_monday"] = (
+            self.calendar_start_monday_switch.get_active()
+        )
+        current_bind_vars_snapshot["corners_visible"] = self.corners_switch.get_active()
+        current_bind_vars_snapshot["bar_workspace_show_number"] = (
+            self.ws_num_switch.get_active()
+        )
+        current_bind_vars_snapshot["bar_workspace_use_chinese_numerals"] = (
+            self.ws_chinese_switch.get_active()
+        )
+        current_bind_vars_snapshot["bar_hide_special_workspace"] = (
+            self.special_ws_switch.get_active()
+        )
+        current_bind_vars_snapshot["bar_theme"] = self.bar_theme_combo.get_active_text()
+        current_bind_vars_snapshot["dock_theme"] = (
+            self.dock_theme_combo.get_active_text()
+        )
+        current_bind_vars_snapshot["panel_theme"] = (
+            self.panel_theme_combo.get_active_text()
+        )
+        current_bind_vars_snapshot["panel_position"] = (
+            self.panel_position_combo.get_active_text()
+        )
         selected_notif_pos_text = self.notification_pos_combo.get_active_text()
         if selected_notif_pos_text:
-            current_bind_vars_snapshot[NOTIF_POS_KEY] = selected_notif_pos_text
+            current_bind_vars_snapshot["notif_pos"] = selected_notif_pos_text
         else:
-            current_bind_vars_snapshot[NOTIF_POS_KEY] = NOTIF_POS_DEFAULT
+            current_bind_vars_snapshot["notif_pos"] = "Top"
 
         for component_name, switch in self.component_switches.items():
             current_bind_vars_snapshot[f"bar_{component_name}_visible"] = (
@@ -1282,9 +1311,11 @@ class HyprConfGUI(Window):
             if checkbox.get_active():
                 selected_monitors.append(monitor_name)
                 any_checked = True
-        
+
         # If no monitors are checked, use empty array (means show on all monitors)
-        current_bind_vars_snapshot["selected_monitors"] = selected_monitors if any_checked else []
+        current_bind_vars_snapshot["selected_monitors"] = (
+            selected_monitors if any_checked else []
+        )
 
         selected_icon_path = self.selected_face_icon
         replace_lock = self.lock_switch and self.lock_switch.get_active()
@@ -1364,7 +1395,9 @@ class HyprConfGUI(Window):
                 from .settings_constants import SOURCE_STRING
 
                 # Check if auto-append is enabled
-                auto_append_enabled = current_bind_vars_snapshot.get("auto_append_hyprland", True)
+                auto_append_enabled = current_bind_vars_snapshot.get(
+                    "auto_append_hyprland", True
+                )
                 if auto_append_enabled:
                     needs_append = True
                     if os.path.exists(hypr_path):
@@ -1468,66 +1501,50 @@ class HyprConfGUI(Window):
             )
 
             positions = ["Top", "Bottom", "Left", "Right"]
-            default_position = DEFAULTS.get("bar_position", "Top")
+            default_position = get_default("bar_position")
             try:
                 self.position_combo.set_active(positions.index(default_position))
             except ValueError:
                 self.position_combo.set_active(0)
 
-            self.centered_switch.set_active(
-                settings_utils.bind_vars.get("centered_bar", False)
-            )
+            self.centered_switch.set_active(get_bind_var("centered_bar"))
             self.centered_switch.set_sensitive(default_position in ["Left", "Right"])
-            
-            self.datetime_12h_switch.set_active(settings_utils.bind_vars.get('datetime_12h_format', False))
 
-            self.dock_switch.set_active(
-                settings_utils.bind_vars.get("dock_enabled", True)
-            )
-            self.dock_hover_switch.set_active(
-                settings_utils.bind_vars.get("dock_always_show", False)
-            )
+            self.datetime_12h_switch.set_active(get_bind_var("datetime_12h_format"))
+
+            self.dock_switch.set_active(get_bind_var("dock_enabled"))
+            self.dock_hover_switch.set_active(get_bind_var("dock_always_show"))
             self.dock_hover_switch.set_sensitive(self.dock_switch.get_active())
-            self.dock_size_scale.set_value(
-                settings_utils.bind_vars.get("dock_icon_size", 28)
-            )
-            self.terminal_entry.set_text(settings_utils.bind_vars["terminal_command"])
+            self.dock_size_scale.set_value(get_bind_var("dock_icon_size"))
+            self.terminal_entry.set_text(get_bind_var("terminal_command"))
             self.calendar_start_monday_switch.set_active(
-                settings_utils.bind_vars.get('calendar_start_monday', False)
+                get_bind_var("calendar_start_monday")
             )
-            self.auto_append_switch.set_active(
-                settings_utils.bind_vars.get("auto_append_hyprland", True)
-            )
-            self.caffeine_switch.set_active(
-                settings_utils.bind_vars.get('caffeine_on_start', False)
-            )
-            self.ws_num_switch.set_active(
-                settings_utils.bind_vars.get("bar_workspace_show_number", False)
-            )
+            self.auto_append_switch.set_active(get_bind_var("auto_append_hyprland"))
+            self.caffeine_switch.set_active(get_bind_var("caffeine_on_start"))
+            self.ws_num_switch.set_active(get_bind_var("bar_workspace_show_number"))
             self.ws_chinese_switch.set_active(
-                settings_utils.bind_vars.get(
-                    "bar_workspace_use_chinese_numerals", False
-                )
+                get_bind_var("bar_workspace_use_chinese_numerals")
             )
             self.ws_chinese_switch.set_sensitive(self.ws_num_switch.get_active())
             self.special_ws_switch.set_active(
-                settings_utils.bind_vars.get("bar_hide_special_workspace", True)
+                get_bind_var("bar_hide_special_workspace")
             )
 
-            default_theme_val = DEFAULTS.get("bar_theme", "Pills")
+            default_theme_val = get_default("bar_theme")
             themes = ["Pills", "Dense", "Edge"]
             try:
                 self.bar_theme_combo.set_active(themes.index(default_theme_val))
             except ValueError:
                 self.bar_theme_combo.set_active(0)
 
-            default_dock_theme_val = DEFAULTS.get("dock_theme", "Pills")
+            default_dock_theme_val = get_default("dock_theme")
             try:
                 self.dock_theme_combo.set_active(themes.index(default_dock_theme_val))
             except ValueError:
                 self.dock_theme_combo.set_active(0)
 
-            default_panel_theme_val = DEFAULTS.get("panel_theme", "Notch")
+            default_panel_theme_val = get_default("panel_theme")
             panel_themes_options = ["Notch", "Panel"]
             try:
                 self.panel_theme_combo.set_active(
@@ -1536,9 +1553,7 @@ class HyprConfGUI(Window):
             except ValueError:
                 self.panel_theme_combo.set_active(0)
 
-            default_panel_position_val = DEFAULTS.get(
-                PANEL_POSITION_KEY, PANEL_POSITION_DEFAULT
-            )
+            default_panel_position_val = get_default("panel_position")
             try:
                 self.panel_position_combo.set_active(
                     self.panel_position_options.index(default_panel_position_val)
@@ -1546,12 +1561,12 @@ class HyprConfGUI(Window):
             except ValueError:
                 try:
                     self.panel_position_combo.set_active(
-                        self.panel_position_options.index(PANEL_POSITION_DEFAULT)
+                        self.panel_position_options.index("Center")
                     )
                 except ValueError:
                     self.panel_position_combo.set_active(0)
 
-            default_notif_pos_val = DEFAULTS.get(NOTIF_POS_KEY, NOTIF_POS_DEFAULT)
+            default_notif_pos_val = get_default("notif_pos")
             notification_positions_list = ["Top", "Bottom"]
             try:
                 self.notification_pos_combo.set_active(
@@ -1561,18 +1576,14 @@ class HyprConfGUI(Window):
                 self.notification_pos_combo.set_active(0)
 
             for name, switch in self.component_switches.items():
-                switch.set_active(
-                    settings_utils.bind_vars.get(f"bar_{name}_visible", True)
-                )
-            self.corners_switch.set_active(
-                settings_utils.bind_vars.get("corners_visible", True)
-            )
+                switch.set_active(get_bind_var(f"bar_{name}_visible"))
+            self.corners_switch.set_active(get_bind_var("corners_visible"))
 
-            metrics_vis_defaults = DEFAULTS.get("metrics_visible", {})
+            metrics_vis_defaults = get_default("metrics_visible")
             for k, s_widget in self.metrics_switches.items():
                 s_widget.set_active(metrics_vis_defaults.get(k, True))
 
-            metrics_small_vis_defaults = DEFAULTS.get("metrics_small_visible", {})
+            metrics_small_vis_defaults = get_default("metrics_small_visible")
             for k, s_widget in self.metrics_small_switches.items():
                 s_widget.set_active(metrics_small_vis_defaults.get(k, True))
 
@@ -1594,9 +1605,26 @@ class HyprConfGUI(Window):
             for child in list(self.disk_entries.get_children()):
                 self.disk_entries.remove(child)
 
-            for p in DEFAULTS.get("bar_metrics_disks", ["/"]):
+            for p in get_default("bar_metrics_disks"):
                 self._add_disk_edit_entry_func(p)
 
+            # Reset notification app lists
+            limited_apps_list = get_default("limited_apps_history")
+            limited_apps_text = ", ".join(f'"{app}"' for app in limited_apps_list)
+            self.limited_apps_entry.set_text(limited_apps_text)
+
+            ignored_apps_list = get_default("history_ignored_apps")
+            ignored_apps_text = ", ".join(f'"{app}"' for app in ignored_apps_list)
+            self.ignored_apps_entry.set_text(ignored_apps_text)
+
+            # Reset monitor selection
+            default_monitors = get_default("selected_monitors")
+            for monitor_name, checkbox in self.monitor_checkboxes.items():
+                # If defaults is empty, check all monitors (show on all)
+                is_selected = (
+                    len(default_monitors) == 0 or monitor_name in default_monitors
+                )
+                checkbox.set_active(is_selected)
             self._update_panel_position_sensitivity()
 
             self.selected_face_icon = None

@@ -12,7 +12,7 @@ from fabric.widgets.centerbox import CenterBox
 from fabric.widgets.datetime import DateTime
 from fabric.widgets.label import Label
 from fabric.widgets.revealer import Revealer
-from gi.repository import Gdk, GLib, Gtk # type: ignore
+from gi.repository import Gdk, GLib, Gtk  # type: ignore
 
 import config.data as data
 import modules.icons as icons
@@ -590,12 +590,15 @@ class Bar(Window):
         if self.notch:
             self.notch.open_notch("tools")
 
-    def on_language_switch(self, _=None, event: HyprlandEvent = None): # type: ignore   
-        lang_data = (
-            event.data[1]
-            if event and event.data and len(event.data) > 1
-            else Language().get_label()
-        )
+    def on_language_switch(self, _=None, event: HyprlandEvent = None):  # type: ignore
+        try:
+            lang_data = (
+                event.data[1]
+                if event and event.data and len(event.data) > 1
+                else Language().get_label()
+            )
+        except (json.JSONDecodeError, AttributeError, IndexError, TypeError):
+            lang_data = "UNK"  # Fallback to default language label
         self.language.set_tooltip_text(lang_data)
         if not data.VERTICAL:
             self.lang_label.set_label(lang_data[:3].upper())
@@ -685,6 +688,10 @@ class Bar(Window):
             self.bar_inner.add_style_class("hidden")
         else:
             self.bar_inner.remove_style_class("hidden")
+            # Ensure notch is above bar when bar is shown
+            if self.notch:
+                # Focus the notch window to bring it to front
+                GLib.idle_add(lambda: exec_shell_command_async("hyprctl dispatch focuswindow class:notch") if self.notch else None)
 
     def chinese_numbers(self):
         if data.BAR_WORKSPACE_USE_CHINESE_NUMERALS:

@@ -1,15 +1,17 @@
 #!/bin/bash
 
-set -e  # Exit immediately if a command fails
-set -u  # Treat unset variables as errors
-set -o pipefail  # Prevent errors in a pipeline from being masked
+set -e          # Exit immediately if a command fails
+set -u          # Treat unset variables as errors
+set -o pipefail # Prevent errors in a pipeline from being masked
 
 REPO_URL="https://github.com/OlaYZen/YZ-Shell.git"
 INSTALL_DIR="$HOME/.config/YZ-Shell"
 PACKAGES=(
+  awww-git
   brightnessctl
   cava
   cliphist
+  ddcutil
   fabric-cli-git
   gnome-bluetooth-3.0
   gobject-introspection
@@ -45,7 +47,6 @@ PACKAGES=(
   python-tzlocal
   python-watchdog
   swappy
-  swww-git
   tesseract
   tesseract-data-eng
   tesseract-data-spa
@@ -62,21 +63,21 @@ PACKAGES=(
 
 # Prevent running as root
 if [ "$(id -u)" -eq 0 ]; then
-    echo "Please do not run this script as root."
-    exit 1
+  echo "Please do not run this script as root."
+  exit 1
 fi
 
 aur_helper="yay"
 
 # Check if paru exists, otherwise use yay
 if command -v paru &>/dev/null; then
-    aur_helper="paru"
+  aur_helper="paru"
 elif ! command -v yay &>/dev/null; then
-    echo "Installing yay-bin..."
-    tmpdir=$(mktemp -d)
-    git clone --depth=1 https://aur.archlinux.org/yay-bin.git "$tmpdir/yay-bin"
-    (cd "$tmpdir/yay-bin" && makepkg -si --noconfirm)
-    rm -rf "$tmpdir"
+  echo "Installing yay-bin..."
+  tmpdir=$(mktemp -d)
+  git clone --depth=1 https://aur.archlinux.org/yay-bin.git "$tmpdir/yay-bin"
+  (cd "$tmpdir/yay-bin" && makepkg -si --noconfirm)
+  rm -rf "$tmpdir"
 fi
 
 # Clone or update the repository
@@ -106,17 +107,17 @@ TEMP_ZIP="/tmp/zed-sans-1.2.0.zip"
 
 # Check if fonts are already installed
 if [ ! -d "$FONT_DIR" ]; then
-    echo "Downloading fonts from $FONT_URL..."
-    curl -L -o "$TEMP_ZIP" "$FONT_URL"
+  echo "Downloading fonts from $FONT_URL..."
+  curl -L -o "$TEMP_ZIP" "$FONT_URL"
 
-    echo "Extracting fonts to $FONT_DIR..."
-    mkdir -p "$FONT_DIR"
-    unzip -o "$TEMP_ZIP" -d "$FONT_DIR"
+  echo "Extracting fonts to $FONT_DIR..."
+  mkdir -p "$FONT_DIR"
+  unzip -o "$TEMP_ZIP" -d "$FONT_DIR"
 
-    echo "Cleaning up..."
-    rm "$TEMP_ZIP"
+  echo "Cleaning up..."
+  rm "$TEMP_ZIP"
 else
-    echo "Fonts are already installed. Skipping download and extraction."
+  echo "Fonts are already installed. Skipping download and extraction."
 fi
 
 # Network services handling
@@ -124,35 +125,35 @@ echo "Configuring network services..."
 
 # Disable iwd if enabled/active
 if systemctl is-enabled --quiet iwd 2>/dev/null || systemctl is-active --quiet iwd 2>/dev/null; then
-    echo "Disabling iwd..."
-    sudo systemctl disable --now iwd
+  echo "Disabling iwd..."
+  sudo systemctl disable --now iwd
 else
-    echo "iwd is already disabled."
+  echo "iwd is already disabled."
 fi
 
 # Enable NetworkManager if not enabled
 if ! systemctl is-enabled --quiet NetworkManager 2>/dev/null; then
-    echo "Enabling NetworkManager..."
-    sudo systemctl enable NetworkManager
+  echo "Enabling NetworkManager..."
+  sudo systemctl enable NetworkManager
 else
-    echo "NetworkManager is already enabled."
+  echo "NetworkManager is already enabled."
 fi
 
 # Start NetworkManager if not running
 if ! systemctl is-active --quiet NetworkManager 2>/dev/null; then
-    echo "Starting NetworkManager..."
-    sudo systemctl start NetworkManager
+  echo "Starting NetworkManager..."
+  sudo systemctl start NetworkManager
 else
-    echo "NetworkManager is already running."
+  echo "NetworkManager is already running."
 fi
 
 # Copy local fonts if not already present
 if [ ! -d "$HOME/.fonts/tabler-icons" ]; then
-    echo "Copying local fonts to $HOME/.fonts/tabler-icons..."
-    mkdir -p "$HOME/.fonts/tabler-icons"
-    cp -r "$INSTALL_DIR/assets/fonts/"* "$HOME/.fonts"
+  echo "Copying local fonts to $HOME/.fonts/tabler-icons..."
+  mkdir -p "$HOME/.fonts/tabler-icons"
+  cp -r "$INSTALL_DIR/assets/fonts/"* "$HOME/.fonts"
 else
-    echo "Local fonts are already installed. Skipping copy."
+  echo "Local fonts are already installed. Skipping copy."
 fi
 
 python "$INSTALL_DIR/config/config.py"
